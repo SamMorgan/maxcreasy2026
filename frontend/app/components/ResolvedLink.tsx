@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import {linkResolver} from '@/sanity/lib/utils'
+//import {linkResolver} from '@/sanity/lib/utils'
 import {DereferencedLink} from '@/sanity/lib/types'
 
 interface ResolvedLinkProps {
@@ -11,12 +11,12 @@ interface ResolvedLinkProps {
 
 export default function ResolvedLink({link, children, className}: ResolvedLinkProps) {
   // resolveLink() is used to determine the type of link and return the appropriate URL.
-  const resolvedLink = linkResolver(link)
+  //const resolvedLink = linkResolver(link)
 
-  if (typeof resolvedLink === 'string') {
+  if (typeof link.href === 'string') {
     return (
       <Link
-        href={resolvedLink}
+        href={link.href}
         target={link?.openInNewTab ? '_blank' : undefined}
         rel={link?.openInNewTab ? 'noopener noreferrer' : undefined}
         className={className}
