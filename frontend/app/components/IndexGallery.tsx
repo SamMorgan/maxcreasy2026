@@ -55,13 +55,13 @@ export default function IndexGallery({images}: IndexGalleryProps) {
 
   return (
     <>
-      <ul className="flex w-full flex-wrap justify-between gap-y-9 px-4.5 [container-type:inline-size]">
+      <ul className="flex w-full flex-wrap md:justify-between justify-center gap-y-9 px-4.5 [container-type:inline-size]">
         {images.map((image, index) => {
           if (!image.asset?._id || !image.asset?.metadata?.dimensions?.width || !image.asset?.metadata?.dimensions?.height) return null
           const dimensions = image.asset.metadata.dimensions
 
           return (
-            <li key={image._key} className="w-full md:w-auto md:shrink-0 px-4.5">
+            <li key={image._key} className="w-auto md:shrink-0 px-4.5">
               <button
                 type="button"
                 className="inline-block cursor-pointer"
@@ -78,8 +78,8 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     dimensions.height > dimensions.width
                       // ? 'block h-auto w-full md:h-[calc((100cqw-11.25rem)/6)] md:w-auto'
                       // : 'block h-auto w-full md:w-[calc((100cqw-11.25rem)/6)]'
-                      ? 'block h-auto w-full md:h-[16.667vw] md:w-auto'
-                      : 'block h-auto w-full md:w-[16.667vw]'
+                      ? 'block md:h-[16.667vw] h-[50vw] w-auto'
+                      : 'block md:w-[16.667vw] w-[50vw] h-auto'
                   }
                 />
               </button>
