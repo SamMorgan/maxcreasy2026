@@ -4,6 +4,7 @@ import {useCallback, useEffect, useState} from 'react'
 
 import Image from 'next/image'
 import {IndexQueryResult} from '@/sanity.types'
+import Link from 'next/link'
 
 export type IndexImage = NonNullable<NonNullable<IndexQueryResult>['images']>[number] & {
   asset: NonNullable<NonNullable<NonNullable<IndexQueryResult>['images']>[number]['asset']>
@@ -54,7 +55,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
 
   return (
     <>
-      <ul className="flex w-full flex-wrap justify-between gap-y-9 px-9 [container-type:inline-size]">
+      <ul className="flex w-full flex-wrap justify-between gap-y-9 px-4.5 [container-type:inline-size]">
         {images.map((image, index) => {
           if (!image.asset?._id || !image.asset?.metadata?.dimensions?.width || !image.asset?.metadata?.dimensions?.height) return null
           const dimensions = image.asset.metadata.dimensions
@@ -127,6 +128,11 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           )}
         </div>
       )}
+      <div className="fixed bottom-9 left-9 z-50 flex items-center gap-4">
+        <Link href="/info" className="block h-4 w-4 rounded-full bg-[#f0ff00]">
+          <span className="sr-only">Info</span>
+        </Link>
+      </div>
     </>
   )
 }

@@ -459,6 +459,22 @@
         },
         "optional": true
       },
+      "contactNO": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "blockContentTextOnly"
+        },
+        "optional": true
+      },
+      "bioNO": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "blockContentTextOnly"
+        },
+        "optional": true
+      },
       "clientList": {
         "type": "objectAttribute",
         "value": {

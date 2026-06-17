@@ -83,6 +83,8 @@ export type Info = {
   _rev: string
   contact?: BlockContentTextOnly
   bio?: BlockContentTextOnly
+  contactNO?: BlockContentTextOnly
+  bioNO?: BlockContentTextOnly
   clientList?: BlockContentTextOnly
 }
 

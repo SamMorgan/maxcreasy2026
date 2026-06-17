@@ -83,6 +83,8 @@ export type Info = {
   _rev: string
   contact?: BlockContentTextOnly
   bio?: BlockContentTextOnly
+  contactNO?: BlockContentTextOnly
+  bioNO?: BlockContentTextOnly
   clientList?: BlockContentTextOnly
 }
 
@@ -419,6 +421,18 @@ export type IndexQueryResult = {
 } | null
 
 // Source: sanity/lib/queries.ts
+// Variable: infoQuery
+// Query: *[_type == "info"][0]{  _id,  contact,  contactNO,  bio,  bioNO,  clientList,}
+export type InfoQueryResult = {
+  _id: string
+  contact: BlockContentTextOnly | null
+  contactNO: BlockContentTextOnly | null
+  bio: BlockContentTextOnly | null
+  bioNO: BlockContentTextOnly | null
+  clientList: BlockContentTextOnly | null
+} | null
+
+// Source: sanity/lib/queries.ts
 // Variable: getPageQuery
 // Query: *[_type == 'page' && slug.current == $slug][0]{    _id,    _type,    name,    slug,    heading,    subheading,    "pageBuilder": pageBuilder[]{      ...,      _type == "callToAction" => {        ...,        button {          ...,            link {      ...,        _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }      }        }      },      _type == "infoSection" => {        content[]{          ...,          markDefs[]{            ...,              _type == "link" => {    "page": page->slug.current,    "post": post->slug.current  }          }        }      },    },  }
 export type GetPageQueryResult = null
@@ -468,6 +482,7 @@ declare module '@sanity/client' {
   interface SanityQueries {
     '*[_type == "settings"][0]': SettingsQueryResult
     '*[_type == "index"][0]{\n  _id,\n  images[]{\n  _key,\n  _type,\n  alt,\n  caption,\n  asset->{\n    _id,\n    url,\n    metadata {\n      dimensions\n    }\n  }\n}\n}': IndexQueryResult
+    '*[_type == "info"][0]{\n  _id,\n  contact,\n  contactNO,\n  bio,\n  bioNO,\n  clientList,\n}': InfoQueryResult
     '\n  *[_type == \'page\' && slug.current == $slug][0]{\n    _id,\n    _type,\n    name,\n    slug,\n    heading,\n    subheading,\n    "pageBuilder": pageBuilder[]{\n      ...,\n      _type == "callToAction" => {\n        ...,\n        button {\n          ...,\n          \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n        }\n      },\n      _type == "infoSection" => {\n        content[]{\n          ...,\n          markDefs[]{\n            ...,\n            \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n          }\n        }\n      },\n    },\n  }\n': GetPageQueryResult
     '\n  *[_type in ["index", "info"]]{\n    _type,\n    _updatedAt,\n  }\n': SitemapQueryResult
     '\n  *[_type == "post" && defined(slug.current)] | order(date desc, _updatedAt desc) {\n    \n  _id,\n  "status": select(_originalId in path("drafts.**") => "draft", "published"),\n  "title": coalesce(title, "Untitled"),\n  "slug": slug.current,\n  excerpt,\n  coverImage,\n  "date": coalesce(date, _updatedAt),\n  "author": author->{firstName, lastName, picture},\n\n  }\n': AllPostsQueryResult

@@ -54,10 +54,12 @@ export function resolveOpenGraphImage(
 type DataAttributeConfig = CreateDataAttributeProps &
   Required<Pick<CreateDataAttributeProps, 'id' | 'type' | 'path'>>
 
-export function dataAttr(config: DataAttributeConfig) {
+export function dataAttr(config: DataAttributeConfig): string {
   return createDataAttribute({
     projectId,
     dataset,
     baseUrl: studioUrl,
-  }).combine(config)
+  })
+    .combine(config)
+    .toString()
 }

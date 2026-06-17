@@ -21,6 +21,15 @@ export const indexQuery = defineQuery(`*[_type == "index"][0]{
   images[]{${imageFields}}
 }`)
 
+export const infoQuery = defineQuery(`*[_type == "info"][0]{
+  _id,
+  contact,
+  contactNO,
+  bio,
+  bioNO,
+  clientList,
+}`)
+
 const postFields = /* groq */ `
   _id,
   "status": select(_originalId in path("drafts.**") => "draft", "published"),
