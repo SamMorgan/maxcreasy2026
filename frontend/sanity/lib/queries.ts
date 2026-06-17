@@ -76,9 +76,8 @@ export const getPageQuery = defineQuery(`
   }
 `)
 
-export const sitemapData = defineQuery(`
-  *[_type == "page" || _type == "post" && defined(slug.current)] | order(_type asc) {
-    "slug": slug.current,
+export const sitemapQuery = defineQuery(`
+  *[_type in ["index", "info"]]{
     _type,
     _updatedAt,
   }
