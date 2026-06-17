@@ -61,10 +61,10 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           const dimensions = image.asset.metadata.dimensions
 
           return (
-            <li key={image._key} className="w-auto md:shrink-0 px-4.5">
+            <li key={image._key} className="w-auto md:shrink-0 px-4.5 pb-9">
               <button
                 type="button"
-                className="inline-block cursor-pointer"
+                className="inline-block cursor-pointer group relative"
                 onClick={() => setActiveIndex(index)}
                 aria-label={image.alt || `View image ${index + 1}`}
               >
@@ -82,6 +82,11 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                       : 'block md:w-[16.667vw] w-[50vw] h-auto'
                   }
                 />
+                {image.caption && (
+                  <span className="absolute w-full top-full pt-2 left-0 text-center text-sm leading-tight opacity-0 group-hover:opacity-100">
+                    {image.caption}
+                  </span>
+                )}
               </button>
             </li>
           )
