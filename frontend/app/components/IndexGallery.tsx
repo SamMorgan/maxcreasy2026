@@ -40,11 +40,9 @@ export default function IndexGallery({images}: IndexGalleryProps) {
       if (event.key === 'ArrowLeft') goTo('prev')
     }
 
-    document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKeyDown)
 
     return () => {
-      document.body.style.overflow = ''
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [activeIndex, close, goTo])
@@ -55,46 +53,8 @@ export default function IndexGallery({images}: IndexGalleryProps) {
 
   return (
     <>
-      <ul className="flex w-full flex-wrap md:justify-between justify-center gap-y-9 px-4.5 [container-type:inline-size]">
-        {images.map((image, index) => {
-          if (!image.asset?._id || !image.asset?.metadata?.dimensions?.width || !image.asset?.metadata?.dimensions?.height) return null
-          const dimensions = image.asset.metadata.dimensions
-
-          return (
-            <li key={image._key} className="w-auto md:shrink-0 px-4.5 pb-9">
-              <button
-                type="button"
-                className="inline-block cursor-pointer group relative"
-                onClick={() => setActiveIndex(index)}
-                aria-label={image.alt || `View image ${index + 1}`}
-              >
-                <Image
-                  src={image.asset.url}
-                  alt={image.alt ?? ''}
-                  width={dimensions.width}
-                  height={dimensions.height}
-                  sizes="(max-width: 768px) 100vw, 16.666vw"
-                  className={
-                    dimensions.height > dimensions.width
-                      // ? 'block h-auto w-full md:h-[calc((100cqw-11.25rem)/6)] md:w-auto'
-                      // : 'block h-auto w-full md:w-[calc((100cqw-11.25rem)/6)]'
-                      ? 'block md:h-[16.667vw] h-[50vw] w-auto'
-                      : 'block md:w-[16.667vw] w-[50vw] h-auto'
-                  }
-                />
-                {image.caption && (
-                  <span className="absolute w-full top-full pt-2 left-0 text-center text-sm leading-tight opacity-0 group-hover:opacity-100">
-                    {image.caption}
-                  </span>
-                )}
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-
-      {activeImage?.asset?._id && activeIndex !== null && (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-white">
+      {activeImage?.asset?._id && activeIndex !== null ? (
+        <div className="fixed inset-0 z-50 flex min-h-screen flex-col flex items-center justify-center">
           <button
             type="button"
             onClick={close}
@@ -103,35 +63,70 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             Index
           </button>
 
-          <div className="relative flex flex-1 items-center justify-center px-6 pt-24 pb-24">
-            <button
-              type="button"
-              aria-label="Previous image"
-              onClick={() => goTo('prev')}
-              className="absolute inset-y-0 left-0 z-10 w-1/2 cursor-w-resize"
-            />
-            <button
-              type="button"
-              aria-label="Next image"
-              onClick={() => goTo('next')}
-              className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-e-resize"
-            />
+          <button
+            type="button"
+            aria-label="Previous image"
+            onClick={() => goTo('prev')}
+            className="absolute inset-y-0 left-0 z-10 w-1/2 cursor-w-resize"
+          />
+          <button
+            type="button"
+            aria-label="Next image"
+            onClick={() => goTo('next')}
+            className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-e-resize"
+          />
 
-            <Image
-              src={activeImage.asset.url}
-              alt={activeImage.alt ?? ''}
-              width={activeImage.asset.metadata?.dimensions?.width || 1600}
-              height={activeImage.asset.metadata?.dimensions?.height || 1600}
-              className="relative z-0 max-h-[80vh] max-w-[80vw] object-contain"
-            />
-          </div>
+          <Image
+            src={activeImage.asset.url}
+            alt={activeImage.alt ?? ''}
+            width={activeImage.asset.metadata?.dimensions?.width || 1600}
+            height={activeImage.asset.metadata?.dimensions?.height || 1600}
+            className="relative z-0 max-h-[calc(100vh-20rem)] max-w-[calc(100vw-4.5rem)] object-contain"
+            sizes="100vw"
+          />
 
           {activeImage.caption && (
-            <span className="absolute right-6 bottom-6 left-6 text-center text-sm leading-tight whitespace-pre-wrap">
+            <span className="absolute right-6 bottom-12 left-6 text-center text-sm leading-tight whitespace-pre-wrap">
               {activeImage.caption}
             </span>
           )}
         </div>
+      ) : (
+        <ul className="flex w-full flex-wrap justify-center gap-y-9 px-4.5 [container-type:inline-size] md:justify-between">
+          {images.map((image, index) => {
+            if (!image.asset?._id || !image.asset?.metadata?.dimensions?.width || !image.asset?.metadata?.dimensions?.height) return null
+            const dimensions = image.asset.metadata.dimensions
+
+            return (
+              <li key={image._key} className="w-auto px-4.5 pb-9 md:shrink-0">
+                <button
+                  type="button"
+                  className="group relative inline-block cursor-pointer"
+                  onClick={() => setActiveIndex(index)}
+                  aria-label={image.alt || `View image ${index + 1}`}
+                >
+                  <Image
+                    src={image.asset.url}
+                    alt={image.alt ?? ''}
+                    width={dimensions.width}
+                    height={dimensions.height}
+                    sizes="(max-width: 768px) 100vw, 16.666vw"
+                    className={
+                      dimensions.height > dimensions.width
+                        ? 'block h-[50vw] w-auto md:h-[16.667vw]'
+                        : 'block h-auto w-[50vw] md:w-[16.667vw]'
+                    }
+                  />
+                  {image.caption && (
+                    <span className="absolute top-full left-0 w-full pt-2 text-center text-sm leading-tight opacity-0 group-hover:opacity-100">
+                      {image.caption}
+                    </span>
+                  )}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
       )}
       <div className="fixed bottom-9 left-9 z-50 flex items-center gap-4">
         <Link href="/info" className="block h-4 w-4 rounded-full bg-[#f0ff00]">
