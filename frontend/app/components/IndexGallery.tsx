@@ -58,7 +58,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           <button
             type="button"
             onClick={close}
-            className="absolute top-6 left-6 z-20 cursor-pointer"
+            className="absolute top-6 left-9 z-20 cursor-pointer"
           >
             Index
           </button>
@@ -128,7 +128,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           })}
         </ul>
       )}
-      <div className="fixed bottom-9 left-9 z-50 flex items-center gap-4">
+      <div className="fixed bottom-6 left-9 z-50 flex items-center gap-4">
         <Link href="/info" className="block h-4 w-4 rounded-full bg-[#f0ff00]">
           <span className="sr-only">Info</span>
         </Link>
