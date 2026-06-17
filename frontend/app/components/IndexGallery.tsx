@@ -98,7 +98,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           <button
             type="button"
             onClick={close}
-            className="absolute top-6 left-6 z-20 cursor-pointer text-sm tracking-wide uppercase"
+            className="absolute top-6 left-6 z-20 cursor-pointer"
           >
             Index
           </button>
@@ -127,9 +127,9 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           </div>
 
           {activeImage.caption && (
-            <p className="absolute right-6 bottom-6 left-6 text-center text-sm">
+            <span className="absolute right-6 bottom-6 left-6 text-center text-sm leading-tight whitespace-pre-wrap">
               {activeImage.caption}
-            </p>
+            </span>
           )}
         </div>
       )}
