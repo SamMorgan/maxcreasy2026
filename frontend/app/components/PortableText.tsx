@@ -10,7 +10,7 @@
 
 import {PortableText, type PortableTextComponents, type PortableTextBlock} from 'next-sanity'
 import ResolvedLink from '@/app/components/ResolvedLink'
-import Image from '@/app/components/SanityImage'
+//import Image from '@/app/components/SanityImage'
 
 export default function CustomPortableText({
   className,
@@ -20,26 +20,26 @@ export default function CustomPortableText({
   value: PortableTextBlock[]
 }) {
   const components: PortableTextComponents = {
-    types: {
-      image: ({value}) => {
-        if (!value?.asset?._ref) {
-          return null
-        }
+    // types: {
+    //   image: ({value}) => {
+    //     if (!value?.asset?._ref) {
+    //       return null
+    //     }
 
-        return (
-          <figure className="my-8">
-            <Image
-              id={value.asset._ref}
-              alt={value.alt || ''}
-              width={672}
-              crop={value.crop}
-              mode="cover"
-              className="rounded-sm"
-            />
-          </figure>
-        )
-      },
-    },
+    //     return (
+    //       <figure className="my-8">
+    //         <Image
+    //           id={value.asset._ref}
+    //           alt={value.alt || ''}
+    //           width={672}
+    //           crop={value.crop}
+    //           mode="cover"
+    //           className="rounded-sm"
+    //         />
+    //       </figure>
+    //     )
+    //   },
+    // },
     block: {
       h1: ({children, value}) => (
         // Add an anchor to the h1
