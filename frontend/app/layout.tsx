@@ -4,7 +4,7 @@ import {SpeedInsights} from '@vercel/speed-insights/next'
 import type {Metadata} from 'next'
 import {Inter, IBM_Plex_Mono} from 'next/font/google'
 import {draftMode} from 'next/headers'
-import {toPlainText} from 'next-sanity'
+//import {toPlainText} from 'next-sanity'
 import {VisualEditing} from 'next-sanity/visual-editing'
 import {Toaster} from 'sonner'
 
@@ -16,7 +16,23 @@ import {sanityFetch, SanityLive} from '@/sanity/lib/live'
 import {settingsQuery} from '@/sanity/lib/queries'
 import {resolveOpenGraphImage} from '@/sanity/lib/utils'
 import {handleError} from '@/app/client-utils'
+import localFont from 'next/font/local'
 
+export const FacilityBook = localFont({
+  src: [
+    {
+      path: './fonts/Facility-Book.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: './fonts/Facility-Book-Italic.woff2',
+      weight: '400',
+      style: 'italic',
+    },
+  ],
+  variable: '--font-facility-book',  // CSS variable name
+})
 /**
  * Generate metadata for the page.
  * Learn more: https://nextjs.org/docs/app/api-reference/functions/generate-metadata#generatemetadata-function
@@ -45,33 +61,22 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${title}`,
       default: title,
     },
-    description: toPlainText(description),
+    description: description as string,
     openGraph: {
       images: ogImage ? [ogImage] : [],
     },
   }
 }
 
-const inter = Inter({
-  variable: '--font-inter',
-  subsets: ['latin'],
-  display: 'swap',
-})
 
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: '--font-ibm-plex-mono',
-  weight: ['400'],
-  subsets: ['latin'],
-  display: 'swap',
-})
 
 export default async function RootLayout({children}: LayoutProps<'/'>) {
   const {isEnabled: isDraftMode} = await draftMode()
 
   return (
-    <html lang="en" className={`${inter.variable} ${ibmPlexMono.variable} bg-white text-black`}>
-      <body>
-        <section className="min-h-screen pt-24">
+    <html lang="en" className={`${FacilityBook.variable} bg-white text-black`}>
+      <body className="font-facility-book">
+        <section className="min-h-screen pt-9">
           {/* The <Toaster> component is responsible for rendering toast notifications used in /app/client-utils.ts and /app/components/DraftModeToast.tsx */}
           <Toaster />
           {isDraftMode && (

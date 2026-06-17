@@ -2,6 +2,25 @@ import {defineQuery} from 'next-sanity'
 
 export const settingsQuery = defineQuery(`*[_type == "settings"][0]`)
 
+const imageFields = /* groq */ `
+  _key,
+  _type,
+  alt,
+  caption,
+  asset->{
+    _id,
+    url,
+    metadata {
+      dimensions
+    }
+  }
+`
+
+export const indexQuery = defineQuery(`*[_type == "index"][0]{
+  _id,
+  images[]{${imageFields}}
+}`)
+
 const postFields = /* groq */ `
   _id,
   "status": select(_originalId in path("drafts.**") => "draft", "published"),
