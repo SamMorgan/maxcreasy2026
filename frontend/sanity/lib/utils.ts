@@ -1,8 +1,8 @@
-import {Link} from '@/sanity.types'
+//import {Link} from '@/sanity.types'
 import {dataset, projectId, studioUrl} from '@/sanity/lib/api'
 import {createDataAttribute, CreateDataAttributeProps} from 'next-sanity'
 import {createImageUrlBuilder, type SanityImageSource} from '@sanity/image-url'
-import {DereferencedLink} from '@/sanity/lib/types'
+//import {DereferencedLink} from '@/sanity/lib/types'
 
 const builder = createImageUrlBuilder({
   projectId: projectId || '',
@@ -27,29 +27,29 @@ export function resolveOpenGraphImage(
 }
 
 // Depending on the type of link, we need to fetch the corresponding page, post, or URL.  Otherwise return null.
-export function linkResolver(link: Link | DereferencedLink | undefined) {
-  if (!link) return null
+// export function linkResolver(link: Link | DereferencedLink | undefined) {
+//   if (!link) return null
 
-  // If linkType is not set but href is, lets set linkType to "href".  This comes into play when pasting links into the portable text editor because a link type is not assumed.
-  if (!link.linkType && link.href) {
-    link.linkType = 'href'
-  }
+//   // If linkType is not set but href is, lets set linkType to "href".  This comes into play when pasting links into the portable text editor because a link type is not assumed.
+//   if (!link.linkType && link.href) {
+//     link.linkType = 'href'
+//   }
 
-  switch (link.linkType) {
-    case 'href':
-      return link.href || null
-    case 'page':
-      if (link?.page && typeof link.page === 'string') {
-        return `/${link.page}`
-      }
-    case 'post':
-      if (link?.post && typeof link.post === 'string') {
-        return `/posts/${link.post}`
-      }
-    default:
-      return null
-  }
-}
+//   switch (link.linkType) {
+//     case 'href':
+//       return link.href || null
+//     case 'page':
+//       if (link?.page && typeof link.page === 'string') {
+//         return `/${link.page}`
+//       }
+//     case 'post':
+//       if (link?.post && typeof link.post === 'string') {
+//         return `/posts/${link.post}`
+//       }
+//     default:
+//       return null
+//   }
+// }
 
 type DataAttributeConfig = CreateDataAttributeProps &
   Required<Pick<CreateDataAttributeProps, 'id' | 'type' | 'path'>>
