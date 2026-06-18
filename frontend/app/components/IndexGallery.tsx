@@ -94,13 +94,13 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           )}
         </div>
       ) : (
-        <ul className="md:flex w-full flex-wrap justify-center gap-y-9 px-4.5 md:pt-9 pt-50 [container-type:inline-size] md:justify-between">
+        <ul className="md:flex w-full flex-wrap justify-center gap-y-9 px-4.5 md:pt-9 pt-25 [container-type:inline-size] md:justify-between">
           {images.map((image, index) => {
             if (!image.asset?._id || !image.asset?.metadata?.dimensions?.width || !image.asset?.metadata?.dimensions?.height) return null
             const dimensions = image.asset.metadata.dimensions
 
             return (
-              <li key={image._key} className="w-auto px-4.5 md:mb-9 mb-50 md:shrink-0">
+              <li key={image._key} className="w-auto px-4.5 md:mb-9 mb-25 md:shrink-0">
                 <button
                   type="button"
                   className="group relative block cursor-pointer m-auto"

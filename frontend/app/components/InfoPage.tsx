@@ -72,11 +72,11 @@ export default function InfoPage({info, suggestedLocale}: InfoPageProps) {
 
   return (
     <>
-      <article className="px-9 pb-9 md:grid grid-cols-12 gap-9">
+      <article className="px-9 pb-9 md:grid grid-cols-12 gap-9 py-6">
         <div>
           <Link href="/">Index</Link>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-2 max-md:mt-32">
           <InfoSection value={contact} documentId={info._id} path={locale === 'no' ? 'contactNO' : 'contact'} />
         </div>
         <div className="col-span-4">
@@ -95,7 +95,7 @@ export default function InfoPage({info, suggestedLocale}: InfoPageProps) {
           type="button"
           onClick={() => setLocalePreference('en')}
           aria-pressed={locale === 'en'}
-          className={locale === 'en' ? 'opacity-100' : 'opacity-50'}
+          className={locale === 'en' ? 'opacity-100' : 'opacity-30'}
         >
           EN
         </button>
@@ -103,7 +103,7 @@ export default function InfoPage({info, suggestedLocale}: InfoPageProps) {
           type="button"
           onClick={() => setLocalePreference('no')}
           aria-pressed={locale === 'no'}
-          className={locale === 'no' ? 'opacity-100' : 'opacity-50'}
+          className={locale === 'no' ? 'opacity-100' : 'opacity-30'}
         >
           NO
         </button>
