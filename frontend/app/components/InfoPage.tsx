@@ -72,11 +72,11 @@ export default function InfoPage({info, suggestedLocale}: InfoPageProps) {
 
   return (
     <>
-      <article className="px-9 pb-9 md:grid grid-cols-12 gap-9 pt-6 pb-12">
-        <div>
+      <article className="px-9 pb-9 md:grid grid-cols-12 gap-9 md:pt-6 pt-25 pb-12">
+        <div className="max-md:fixed max-md:top-6 max-md:left-9 max-md:z-50">
           <Link href="/">Index</Link>
         </div>
-        <div className="col-span-2 max-md:mt-32">
+        <div className="col-span-2">
           <InfoSection value={contact} documentId={info._id} path={locale === 'no' ? 'contactNO' : 'contact'} />
         </div>
         <div className="col-span-4">
