@@ -72,7 +72,7 @@ export default function InfoPage({info, suggestedLocale}: InfoPageProps) {
 
   return (
     <>
-      <article className="px-9 pb-9 md:grid grid-cols-12 gap-9 py-6">
+      <article className="px-9 pb-9 md:grid grid-cols-12 gap-9 pt-6 pb-12">
         <div>
           <Link href="/">Index</Link>
         </div>
