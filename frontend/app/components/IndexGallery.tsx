@@ -86,9 +86,11 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           />
 
           {activeImage.caption && (
-            <span className="absolute right-6 bottom-12 left-6 text-center text-sm leading-tight whitespace-pre-wrap">
-              {activeImage.caption}
-            </span>
+            <div className="absolute bottom-0 left-0 w-full text-center flex items-center justify-center h-40">
+              <span className="whitespace-pre-wrap">
+                {activeImage.caption}
+              </span>
+            </div>
           )}
         </div>
       ) : (
@@ -110,7 +112,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     alt={image.alt ?? ''}
                     width={dimensions.width}
                     height={dimensions.height}
-                    sizes="(max-width: 768px) 100vw, 16.666vw"
+                    sizes="(max-width: 768px) 50vw, 16.666vw"
                     className={
                       dimensions.height > dimensions.width
                         ? 'block h-[50vw] w-auto md:h-[16.667vw]'
@@ -118,7 +120,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     }
                   />
                   {image.caption && (
-                    <span className="absolute top-full left-0 w-full pt-2 text-center text-sm leading-tight opacity-0 group-hover:opacity-100">
+                    <span className="absolute top-full left-0 w-full pt-2 text-center text-xs leading-tight opacity-0 group-hover:opacity-100">
                       {image.caption}
                     </span>
                   )}
@@ -129,7 +131,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
         </ul>
       )}
       <div className="fixed bottom-6 left-9 z-50 flex items-center gap-4">
-        <Link href="/info" className="block h-4 w-4 rounded-full bg-[#f0ff00]">
+        <Link href="/info" className="dot bg-[#f0ff00]">
           <span className="sr-only">Info</span>
         </Link>
       </div>

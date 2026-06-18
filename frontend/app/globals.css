@@ -46,3 +46,7 @@
 .font-facility-book {
   font-family: var(--font-facility-book);
 }
+
+.dot {
+  @apply block h-4 w-4 rounded-full;
+}

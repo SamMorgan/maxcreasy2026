@@ -16,6 +16,7 @@ const imageFields = /* groq */ `
   }
 `
 
+// Image order is shuffled per request in app/page.tsx (GROQ has no random/shuffle).
 export const indexQuery = defineQuery(`*[_type == "index"][0]{
   _id,
   images[]{${imageFields}}
