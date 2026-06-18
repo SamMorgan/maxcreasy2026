@@ -76,7 +76,7 @@ export default async function RootLayout({children}: LayoutProps<'/'>) {
   return (
     <html lang="en" className={`${FacilityBook.variable} bg-white text-black antialiased overscroll-none`}>
       <body className="font-facility-book text-[0.875rem] leading-[1.125rem]">
-        <section className="min-h-screen pt-9">
+        <section className="min-h-[100svh]">
           {/* The <Toaster> component is responsible for rendering toast notifications used in /app/client-utils.ts and /app/components/DraftModeToast.tsx */}
           <Toaster />
           {isDraftMode && (

@@ -2,6 +2,8 @@
 
 @plugin "@tailwindcss/typography";
 
+@custom-variant can-hover (@media (hover: hover) and (pointer: fine));
+
 /* @layer base {
   h1,
   h2,
