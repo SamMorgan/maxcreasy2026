@@ -94,7 +94,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           )}
         </div>
       ) : (
-        <ul className="md:flex w-full flex-wrap justify-center gap-y-9 px-4.5 md:pt-9 pt-25 [container-type:inline-size] md:justify-between">
+        <ul className="md:flex w-full flex-wrap justify-center gap-y-9 px-4.5 py-25 md:py-0 md:pt-9 max-md:pb-above-dot [container-type:inline-size] md:justify-between">
           {images.map((image, index) => {
             if (!image.asset?._id || !image.asset?.metadata?.dimensions?.width || !image.asset?.metadata?.dimensions?.height) return null
             const dimensions = image.asset.metadata.dimensions

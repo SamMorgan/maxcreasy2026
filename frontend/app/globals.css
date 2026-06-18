@@ -52,6 +52,13 @@
 .dot {
   @apply block h-6 w-6 rounded-full;
 }
+
 .dot-pos {
-  @apply fixed top-[calc(100svh-3rem)] left-9 z-50 flex items-center gap-4;
+  @apply fixed z-50 flex items-center gap-4;
+  left: calc(2.25rem + env(safe-area-inset-left, 0px));
+  bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+}
+
+@utility pb-above-dot {
+  padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px));
 }

@@ -1,7 +1,7 @@
 import './globals.css'
 
 import {SpeedInsights} from '@vercel/speed-insights/next'
-import type {Metadata} from 'next'
+import type {Metadata, Viewport} from 'next'
 import {Inter, IBM_Plex_Mono} from 'next/font/google'
 import {draftMode} from 'next/headers'
 //import {toPlainText} from 'next-sanity'
@@ -33,6 +33,11 @@ export const FacilityBook = localFont({
   ],
   variable: '--font-facility-book',  // CSS variable name
 })
+
+export const viewport: Viewport = {
+  viewportFit: 'cover',
+}
+
 /**
  * Generate metadata for the page.
  * Learn more: https://nextjs.org/docs/app/api-reference/functions/generate-metadata#generatemetadata-function
