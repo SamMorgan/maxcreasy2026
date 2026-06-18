@@ -112,11 +112,11 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     alt={image.alt ?? ''}
                     width={dimensions.width}
                     height={dimensions.height}
-                    sizes="(max-width: 768px) 50vw, 16.666vw"
+                    sizes="(max-width: 768px) 50vw, (max-width: 1280px) 16.666vw, 14.285vw"
                     className={`block
                       ${dimensions.height > dimensions.width
-                        ? 'block h-[50vw] w-auto md:h-[16.667vw]'
-                        : 'block h-auto w-[50vw] md:w-[16.667vw]'
+                        ? 'block h-[50vw] w-auto xl:h-[14.285vw] md:h-[16.667vw]'
+                        : 'block h-auto w-[50vw] xl:w-[14.285vw] md:w-[16.667vw]'
                       }`}
                   />
                   {image.caption && (
