@@ -130,7 +130,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           })}
         </ul>
       )}
-      <div className="fixed bottom-6 left-9 z-50 flex items-center gap-4">
+      <div className="dot-pos">
         <Link href="/info" className="dot bg-[#f0ff00]">
           <span className="sr-only">Info</span>
         </Link>

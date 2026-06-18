@@ -87,7 +87,7 @@ export default function InfoPage({info, suggestedLocale}: InfoPageProps) {
         </div>
       </article>
 
-      <div className="fixed bottom-6 left-9 z-50 flex items-center gap-4">
+      <div className="dot-pos">
         <Link href="/" className="dot bg-black">
           <span className="sr-only">Index</span>
         </Link>

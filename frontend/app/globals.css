@@ -52,3 +52,6 @@
 .dot {
   @apply block h-6 w-6 rounded-full;
 }
+.dot-pos {
+  @apply fixed top-[calc(100svh-3rem)] left-9 z-50 flex items-center gap-4;
+}
