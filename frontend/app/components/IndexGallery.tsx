@@ -45,8 +45,9 @@ function GridSpacers({count, breakpoint}: {count: number; breakpoint: 'md' | 'xl
 
 export default function IndexGallery({images}: IndexGalleryProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
-  const [loadedIndex, setLoadedIndex] = useState<number | null>(null)
+  const [imageReady, setImageReady] = useState(false)
   const activeIndexRef = useRef(activeIndex)
+  const loadedUrls = useRef(new Set<string>())
 
   useEffect(() => {
     activeIndexRef.current = activeIndex
@@ -58,19 +59,56 @@ export default function IndexGallery({images}: IndexGalleryProps) {
     (direction: 'prev' | 'next') => {
       setActiveIndex((current) => {
         if (current === null || images.length === 0) return current
-        return direction === 'next'
-          ? (current + 1) % images.length
-          : (current - 1 + images.length) % images.length
+        const next =
+          direction === 'next'
+            ? (current + 1) % images.length
+            : (current - 1 + images.length) % images.length
+        const url = images[next]?.asset?.url
+        setImageReady(Boolean(url && loadedUrls.current.has(url)))
+        return next
       })
     },
-    [images.length],
+    [images],
+  )
+
+  const openImage = useCallback(
+    (index: number) => {
+      const url = images[index]?.asset?.url
+      setImageReady(Boolean(url && loadedUrls.current.has(url)))
+      setActiveIndex(index)
+    },
+    [images],
+  )
+
+  const preloadImage = useCallback(
+    (index: number) => {
+      const url = images[index]?.asset?.url
+      if (!url || loadedUrls.current.has(url)) return
+
+      const img = new window.Image()
+      img.onload = () => loadedUrls.current.add(url)
+      img.src = url
+    },
+    [images],
   )
 
   useEffect(() => {
     if (activeIndex === null) {
-      setLoadedIndex(null)
+      setImageReady(false)
+      return
     }
-  }, [activeIndex])
+
+    const url = images[activeIndex]?.asset?.url
+    if (!url) {
+      setImageReady(false)
+      return
+    }
+
+    setImageReady(loadedUrls.current.has(url))
+
+    preloadImage((activeIndex + 1) % images.length)
+    preloadImage((activeIndex - 1 + images.length) % images.length)
+  }, [activeIndex, images, preloadImage])
 
   useEffect(() => {
     if (activeIndex === null) return
@@ -91,7 +129,6 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   if (images.length === 0) return null
 
   const activeImage = activeIndex !== null ? images[activeIndex] : null
-  const displayedImage = loadedIndex !== null ? images[loadedIndex] : null
   const mdSpacerCount = spacerCount(images.length, MD_COLUMNS)
   const xlSpacerCount = spacerCount(images.length, XL_COLUMNS)
 
@@ -121,23 +158,27 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           />
           <div className="relative m-auto h-full w-full max-h-[calc(100vh-20rem)] max-w-[calc(100vw-4.5rem)]">
             <Image
+              key={activeImage._key}
               src={activeImage.asset.url}
               alt={activeImage.alt ?? activeImage.caption ?? ''}
               fill
-              className="object-contain pointer-events-none"
+              className={`object-contain pointer-events-none transition-opacity duration-150 ${
+                imageReady ? 'opacity-100' : 'opacity-0'
+              }`}
               sizes="calc(100vw - 4.5rem)"
               onLoad={() => {
+                loadedUrls.current.add(activeImage.asset.url)
                 if (activeIndexRef.current === activeIndex) {
-                  setLoadedIndex(activeIndex)
+                  setImageReady(true)
                 }
               }}
             />
           </div>
 
-          {displayedImage?.caption && (
+          {activeImage.caption && (
             <div className="absolute bottom-0 left-0 w-full text-center flex items-center justify-center h-40">
               <span className="whitespace-pre-wrap">
-                {displayedImage.caption}
+                {activeImage.caption}
               </span>
             </div>
           )}
@@ -153,7 +194,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                 <button
                   type="button"
                   className="group relative block cursor-pointer m-auto"
-                  onClick={() => setActiveIndex(index)}
+                  onClick={() => openImage(index)}
                   aria-label={image.alt || `View image ${index + 1}`}
                 >
                   <Image
@@ -162,6 +203,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     width={dimensions.width}
                     height={dimensions.height}
                     sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, (max-width: 1280px) 14.285vw, 12.5vw"
+                    onLoad={() => loadedUrls.current.add(image.asset.url)}
                     className={`block
                       ${dimensions.height > dimensions.width
                         ? 'block h-[50vw] w-auto xl:h-[12.5vw] lg:h-[14.285vw] md:h-[25vw]'
