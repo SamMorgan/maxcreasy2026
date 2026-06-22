@@ -14,6 +14,35 @@ type IndexGalleryProps = {
   images: IndexImage[]
 }
 
+const MD_COLUMNS = 6
+const XL_COLUMNS = 7
+
+function spacerCount(count: number, columns: number) {
+  return (columns - (count % columns)) % columns
+}
+
+function GridSpacers({count, breakpoint}: {count: number; breakpoint: 'md' | 'xl'}) {
+  if (count === 0) return null
+
+  return Array.from({length: count}, (_, index) => (
+    <li
+      key={`spacer-${breakpoint}-${index}`}
+      aria-hidden
+      className={`pointer-events-none invisible max-md:hidden w-auto px-4.5 md:mb-9 md:shrink-0 ${
+        breakpoint === 'md' ? 'xl:hidden' : 'hidden xl:block'
+      }`}
+    >
+      <span
+        className={
+          breakpoint === 'md'
+            ? 'block md:w-[16.667vw]'
+            : 'block w-[14.285vw]'
+        }
+      />
+    </li>
+  ))
+}
+
 export default function IndexGallery({images}: IndexGalleryProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
@@ -50,6 +79,8 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   if (images.length === 0) return null
 
   const activeImage = activeIndex !== null ? images[activeIndex] : null
+  const mdSpacerCount = spacerCount(images.length, MD_COLUMNS)
+  const xlSpacerCount = spacerCount(images.length, XL_COLUMNS)
 
   return (
     <>
@@ -67,23 +98,23 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             type="button"
             aria-label="Previous image"
             onClick={() => goTo('prev')}
-            className="absolute inset-y-0 left-0 z-10 w-1/2 cursor-w-resize"
+            className="absolute inset-y-0 left-0 z-10 w-1/2 cursor-arrow-left"
           />
           <button
             type="button"
             aria-label="Next image"
             onClick={() => goTo('next')}
-            className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-e-resize"
+            className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-arrow-right"
           />
-
+          <div className="relative m-auto h-full w-full max-h-[calc(100vh-20rem)] max-w-[calc(100vw-4.5rem)]">
           <Image
             src={activeImage.asset.url}
             alt={activeImage.alt ?? ''}
-            width={activeImage.asset.metadata?.dimensions?.width || 1600}
-            height={activeImage.asset.metadata?.dimensions?.height || 1600}
-            className="relative z-0 max-h-[calc(100vh-20rem)] max-w-[calc(100vw-4.5rem)] object-contain"
-            sizes="100vw"
+            fill
+            className="object-contain pointer-events-none"
+            sizes="calc(100vw - 4.5rem)"
           />
+          </div>
 
           {activeImage.caption && (
             <div className="absolute bottom-0 left-0 w-full text-center flex items-center justify-center h-40">
@@ -94,7 +125,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           )}
         </div>
       ) : (
-        <ul className="md:flex w-full flex-wrap justify-center gap-y-9 px-4.5 py-25 md:py-0 md:pt-9 max-md:pb-above-dot [container-type:inline-size] md:justify-between">
+        <ul className="md:flex w-full flex-wrap justify-center gap-y-9 px-4.5 py-25 md:pt-9 max-md:pb-above-dot [container-type:inline-size] md:justify-between">
           {images.map((image, index) => {
             if (!image.asset?._id || !image.asset?.metadata?.dimensions?.width || !image.asset?.metadata?.dimensions?.height) return null
             const dimensions = image.asset.metadata.dimensions
@@ -112,11 +143,11 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     alt={image.alt ?? ''}
                     width={dimensions.width}
                     height={dimensions.height}
-                    sizes="(max-width: 768px) 50vw, (max-width: 1280px) 16.666vw, 14.285vw"
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, (max-width: 1280px) 14.285vw, 12.5vw"
                     className={`block
                       ${dimensions.height > dimensions.width
-                        ? 'block h-[50vw] w-auto xl:h-[14.285vw] md:h-[16.667vw]'
-                        : 'block h-auto w-[50vw] xl:w-[14.285vw] md:w-[16.667vw]'
+                        ? 'block h-[50vw] w-auto xl:h-[12.5vw] lg:h-[14.285vw] md:h-[25vw]'
+                        : 'block h-auto w-[50vw] xl:w-[12.5vw] lg:w-[14.285vw] md:w-[25vw]'
                       }`}
                   />
                   {image.caption && (
@@ -128,6 +159,8 @@ export default function IndexGallery({images}: IndexGalleryProps) {
               </li>
             )
           })}
+          <GridSpacers count={mdSpacerCount} breakpoint="md" />
+          <GridSpacers count={xlSpacerCount} breakpoint="xl" />
         </ul>
       )}
       <div className="dot-pos">

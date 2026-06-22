@@ -62,3 +62,11 @@
 @utility pb-above-dot {
   padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px));
 }
+
+.cursor-arrow-right {
+  cursor: url('/cursors/arrow-right.svg') 59 5, pointer;
+}
+
+.cursor-arrow-left {
+  cursor: url('/cursors/arrow-left.svg') 0 5, pointer;
+}
