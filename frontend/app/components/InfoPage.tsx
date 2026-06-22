@@ -72,23 +72,27 @@ export default function InfoPage({info, suggestedLocale}: InfoPageProps) {
 
   return (
     <>
-      <article className="px-9 py-25 md:grid grid-cols-12 gap-9 md:py-6 max-md:pb-above-dot">
+      <article className="px-9 py-25 md:flex gap-9 md:py-6 max-md:pb-above-dot md:[&>div]:max-w-[min(42ch,33vw)] flex-1 [&_p]:mb-4.5 [&_a]:hover:opacity-30">
         <div className="max-md:fixed max-md:top-6 max-md:left-9 max-md:z-50">
           <Link href="/">Index</Link>
         </div>
-        <div className="col-span-2">
+        <div>
           <InfoSection value={contact} documentId={info._id} path={locale === 'no' ? 'contactNO' : 'contact'} />
         </div>
-        <div className="col-span-4">
+        <div className="flex-1">
           <InfoSection value={bio} documentId={info._id} path={locale === 'no' ? 'bioNO' : 'bio'} />
         </div>
-        <div className="col-span-3">
+        <div className="flex-1 flex flex-col">
           <InfoSection value={info.clientList} documentId={info._id} path="clientList" />
+          <div className="mt-auto">
+          Design: <a href="https://daly-lyon.co.uk/" target='_blank'>Daly & Lyon</a><br />
+          Development: <a href="https://svmorgan.com/" target='_blank'>svmorgan</a>
+          </div>
         </div>
       </article>
 
       <div className="dot-pos">
-        <Link href="/" className="dot bg-black">
+        <Link href="/" className="dot">
           <span className="sr-only">Index</span>
         </Link>
         <button

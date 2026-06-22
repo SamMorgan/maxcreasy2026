@@ -50,13 +50,14 @@
 }
 
 .dot {
-  @apply block h-6 w-6 rounded-full;
+  @apply block h-8 w-8 bg-contain bg-center bg-no-repeat;
+  background-image: url('/web-app-manifest-192x192.png');
 }
 
 .dot-pos {
   @apply fixed z-50 flex items-center gap-4;
   left: calc(2.25rem + env(safe-area-inset-left, 0px));
-  bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 @utility pb-above-dot {

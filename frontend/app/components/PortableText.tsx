@@ -103,8 +103,6 @@ export default function CustomPortableText({
   }
 
   return (
-    <div className={`[&_p]:mb-4.5 [&_a]:opacity-30 [&_a]:hover:opacity-100 ${className}`}>
-      <PortableText components={components} value={value} />
-    </div>
+    <PortableText components={components} value={value} />
   )
 }

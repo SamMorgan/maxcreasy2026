@@ -164,7 +164,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
         </ul>
       )}
       <div className="dot-pos">
-        <Link href="/info" className="dot bg-[#f0ff00]">
+        <Link href="/info" className="dot">
           <span className="sr-only">Info</span>
         </Link>
       </div>
