@@ -1,6 +1,6 @@
 'use client'
 
-import {useCallback, useEffect, useState} from 'react'
+import {useCallback, useEffect, useRef, useState} from 'react'
 
 import Image from 'next/image'
 import {IndexQueryResult} from '@/sanity.types'
@@ -45,6 +45,12 @@ function GridSpacers({count, breakpoint}: {count: number; breakpoint: 'md' | 'xl
 
 export default function IndexGallery({images}: IndexGalleryProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [loadedIndex, setLoadedIndex] = useState<number | null>(null)
+  const activeIndexRef = useRef(activeIndex)
+
+  useEffect(() => {
+    activeIndexRef.current = activeIndex
+  }, [activeIndex])
 
   const close = useCallback(() => setActiveIndex(null), [])
 
@@ -59,6 +65,12 @@ export default function IndexGallery({images}: IndexGalleryProps) {
     },
     [images.length],
   )
+
+  useEffect(() => {
+    if (activeIndex === null) {
+      setLoadedIndex(null)
+    }
+  }, [activeIndex])
 
   useEffect(() => {
     if (activeIndex === null) return
@@ -79,6 +91,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   if (images.length === 0) return null
 
   const activeImage = activeIndex !== null ? images[activeIndex] : null
+  const displayedImage = loadedIndex !== null ? images[loadedIndex] : null
   const mdSpacerCount = spacerCount(images.length, MD_COLUMNS)
   const xlSpacerCount = spacerCount(images.length, XL_COLUMNS)
 
@@ -107,19 +120,24 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-arrow-right"
           />
           <div className="relative m-auto h-full w-full max-h-[calc(100vh-20rem)] max-w-[calc(100vw-4.5rem)]">
-          <Image
-            src={activeImage.asset.url}
-            alt={activeImage.alt ?? ''}
-            fill
-            className="object-contain pointer-events-none"
-            sizes="calc(100vw - 4.5rem)"
-          />
+            <Image
+              src={activeImage.asset.url}
+              alt={activeImage.alt ?? activeImage.caption ?? ''}
+              fill
+              className="object-contain pointer-events-none"
+              sizes="calc(100vw - 4.5rem)"
+              onLoad={() => {
+                if (activeIndexRef.current === activeIndex) {
+                  setLoadedIndex(activeIndex)
+                }
+              }}
+            />
           </div>
 
-          {activeImage.caption && (
+          {displayedImage?.caption && (
             <div className="absolute bottom-0 left-0 w-full text-center flex items-center justify-center h-40">
               <span className="whitespace-pre-wrap">
-                {activeImage.caption}
+                {displayedImage.caption}
               </span>
             </div>
           )}
