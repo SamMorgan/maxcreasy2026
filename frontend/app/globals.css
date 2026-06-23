@@ -63,6 +63,42 @@
   padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px));
 }
 
+@utility mobile-grid-edge-padding {
+  @media (width < 48rem) {
+    padding-top: max(0px, calc(50svh - var(--first-half-h)));
+    padding-bottom: max(
+      calc(6.25rem + env(safe-area-inset-bottom, 0px)),
+      max(0px, calc(50svh - var(--last-half-h)))
+    );
+  }
+}
+
+@utility grid-caption {
+  @apply absolute top-full left-0 w-full pt-2 text-center text-xs leading-tight;
+}
+
+@media (width < 48rem) {
+  .grid-caption {
+    opacity: 0;
+  }
+
+  .grid-caption[data-active='true'] {
+    opacity: 1;
+  }
+}
+
+@media (width >= 48rem) {
+  .grid-caption {
+    opacity: 1;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .group:not(:hover) .grid-caption {
+      opacity: 0;
+    }
+  }
+}
+
 .cursor-arrow-right {
   cursor: url('/cursors/arrow-right.svg') 59 5, pointer;
 }

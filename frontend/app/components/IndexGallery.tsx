@@ -1,9 +1,8 @@
 'use client'
 
-import {useCallback, useEffect, useState} from 'react'
+import {useCallback, useEffect, useRef, useState, type CSSProperties} from 'react'
 
 import Image from 'next/image'
-import {useMobileActiveGridIndex} from '@/lib/useMobileActiveGridIndex'
 import {gridImageUrl, lightboxImageUrl} from '@/sanity/lib/utils'
 import {IndexQueryResult} from '@/sanity.types'
 import Link from 'next/link'
@@ -21,6 +20,25 @@ const XL_COLUMNS = 7
 
 function spacerCount(count: number, columns: number) {
   return (columns - (count % columns)) % columns
+}
+
+function mobileGridImageHalfHeight(width: number, height: number) {
+  if (height > width) {
+    return 'calc((100vw - 10rem) / 2)'
+  }
+
+  return `calc((100vw - 10rem) * ${height} / ${width} / 2)`
+}
+
+function imageDimensions(image: IndexImage) {
+  const width = image.asset?.metadata?.dimensions?.width
+  const height = image.asset?.metadata?.dimensions?.height
+  if (!width || !height) return null
+  return {width, height}
+}
+
+function isRenderableGridImage(image: IndexImage) {
+  return imageDimensions(image) !== null && Boolean(image.asset?._id)
 }
 
 function GridSpacers({count, breakpoint}: {count: number; breakpoint: 'md' | 'xl'}) {
@@ -55,12 +73,11 @@ function markUrlLoaded(url: string, setLoadedUrls: (fn: (prev: Set<string>) => S
 }
 
 export default function IndexGallery({images}: IndexGalleryProps) {
+  const listRef = useRef<HTMLUListElement>(null)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
   const [mountedIndices, setMountedIndices] = useState<Set<number>>(new Set())
   const [loadedUrls, setLoadedUrls] = useState<Set<string>>(new Set())
-  const {focusedIndex: focusedGridIndex, register: registerGridItem} = useMobileActiveGridIndex(
-    images.length,
-  )
 
   const close = useCallback(() => {
     setActiveIndex(null)
@@ -82,6 +99,45 @@ export default function IndexGallery({images}: IndexGalleryProps) {
     },
     [images.length],
   )
+
+  useEffect(() => {
+    if (activeIndex !== null) {
+      setFocusedIndex(null)
+      return
+    }
+
+    const pick = () => {
+      const items = listRef.current?.querySelectorAll<HTMLElement>('[data-grid-index]')
+      if (!items?.length) return
+
+      const centerY = window.innerHeight / 2
+      let best: number | null = null
+      let bestDist = Infinity
+
+      items.forEach((el) => {
+        const index = Number(el.dataset.gridIndex)
+        const rect = el.getBoundingClientRect()
+        const dist = Math.abs(rect.top + rect.height / 2 - centerY)
+        if (dist < bestDist) {
+          bestDist = dist
+          best = index
+        }
+      })
+
+      if (best !== null) {
+        setFocusedIndex((current) => (current === best ? current : best))
+      }
+    }
+
+    pick()
+    window.addEventListener('scroll', pick, {passive: true})
+    window.addEventListener('resize', pick)
+
+    return () => {
+      window.removeEventListener('scroll', pick)
+      window.removeEventListener('resize', pick)
+    }
+  }, [activeIndex, images.length])
 
   useEffect(() => {
     if (activeIndex === null) return
@@ -138,6 +194,25 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   const activeImage = activeIndex !== null ? images[activeIndex] : null
   const mdSpacerCount = spacerCount(images.length, MD_COLUMNS)
   const xlSpacerCount = spacerCount(images.length, XL_COLUMNS)
+  const firstDimensions = images.map(imageDimensions).find((dimensions) => dimensions !== null)
+  const lastDimensions = [...images]
+    .reverse()
+    .map(imageDimensions)
+    .find((dimensions) => dimensions !== null)
+  const mobileEdgePaddingStyle =
+    firstDimensions && lastDimensions
+      ? ({
+          '--first-half-h': mobileGridImageHalfHeight(
+            firstDimensions.width,
+            firstDimensions.height,
+          ),
+          '--last-half-h': mobileGridImageHalfHeight(
+            lastDimensions.width,
+            lastDimensions.height,
+          ),
+        } as CSSProperties)
+      : undefined
+  const lastRenderableIndex = images.findLastIndex(isRenderableGridImage)
 
   return (
     <>
@@ -164,7 +239,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-arrow-right"
           />
 
-          <div className="relative m-auto h-full w-full sm:max-h-[calc(100vh-20rem)] max-h-[calc(100vh-10rem)] max-w-[calc(100vw-4.5rem)]">
+          <div className="relative m-auto h-full w-full md:max-h-[calc(100vh-20rem)] max-h-[calc(100vh-10rem)] max-w-[calc(100vw-4.5rem)]">
             {[...mountedIndices].map((index) => {
               const image = images[index]
               if (!image?.asset?._id) return null
@@ -192,23 +267,28 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           </div>
 
           {activeImage.caption && (
-            <div className="absolute sm:bottom-0 bottom-6 left-0 sm:flex md:h-40 w-full items-center justify-center text-center">
+            <div className="absolute md:bottom-0 bottom-6 left-0 md:flex md:h-40 w-full items-center justify-center text-center">
               <span className="whitespace-pre-wrap">{activeImage.caption}</span>
             </div>
           )}
         </div>
       ) : (
-        <ul className="sm:flex w-full flex-wrap justify-center gap-y-9 px-4.5 py-25 md:pt-9 max-md:pb-above-dot [container-type:inline-size] md:justify-between">
+        <ul
+          ref={listRef}
+          className="mobile-grid-edge-padding md:flex w-full flex-wrap justify-center gap-y-9 px-4.5 md:pt-9 [container-type:inline-size] md:justify-between"
+          style={mobileEdgePaddingStyle}
+        >
           {images.map((image, index) => {
-            if (!image.asset?._id || !image.asset?.metadata?.dimensions?.width || !image.asset?.metadata?.dimensions?.height) return null
-            const dimensions = image.asset.metadata.dimensions
+            if (!isRenderableGridImage(image)) return null
+
+            const dimensions = image.asset!.metadata!.dimensions!
             const gridUrl = gridImageUrl(image)
 
             return (
               <li
                 key={image._key}
-                ref={(element) => registerGridItem(index, element)}
-                className="w-auto px-4.5 md:mb-9 mb-25 md:shrink-0"
+                data-grid-index={index}
+                className={`w-auto px-4.5 md:mb-9 md:shrink-0 ${index !== lastRenderableIndex ? 'mb-25' : ''}`}
               >
                 <button
                   type="button"
@@ -224,17 +304,16 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     unoptimized
                     sizes="(max-width: 768px) 60vw, 12.5rem"
                     onLoad={() => markUrlLoaded(gridUrl, setLoadedUrls)}
-                    className={`${
+                    className={
                       dimensions.height <= dimensions.width
                         ? 'block h-auto md:w-50 w-[calc(100vw-10rem)]'
-                        : 'block h-50 h-[calc(100vw-10rem)] w-auto'
-                    }`}
+                        : 'block md:h-50 h-[calc(100vw-10rem)] w-auto'
+                    }
                   />
                   {image.caption && (
                     <span
-                      className={`absolute top-full left-0 w-full pt-2 text-center text-xs leading-tight max-md:opacity-0 md:opacity-100 md:can-hover:opacity-0 md:can-hover:group-hover:opacity-100 ${
-                        focusedGridIndex === index ? 'max-md:opacity-100' : ''
-                      }`}
+                      data-active={focusedIndex === index ? 'true' : undefined}
+                      className="grid-caption"
                     >
                       {image.caption}
                     </span>
