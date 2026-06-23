@@ -10,9 +10,18 @@ const builder = createImageUrlBuilder({
 })
 
 // Create an image URL builder using the client
-// Export a function that can be used to get image URLs
-function urlForImage(source: SanityImageSource) {
+export function urlFor(source: SanityImageSource) {
   return builder.image(source)
+}
+
+/** Grid thumbnails — high quality JPEG, single Sanity CDN pass (no Next recompression). */
+export function gridImageUrl(source: SanityImageSource) {
+  return urlFor(source).width(800).quality(92).format('jpg').fit('max').url()
+}
+
+/** Lightbox — large JPEG at q95 to reduce gradient banding vs WebP at lower quality. */
+export function lightboxImageUrl(source: SanityImageSource) {
+  return urlFor(source).width(2800).quality(95).format('jpg').fit('max').url()
 }
 
 export function resolveOpenGraphImage(
@@ -21,7 +30,7 @@ export function resolveOpenGraphImage(
   height = 627,
 ) {
   if (!image) return
-  const url = urlForImage(image)?.width(1200).height(627).fit('crop').url()
+  const url = urlFor(image).width(1200).height(627).fit('crop').quality(90).format('jpg').url()
   if (!url) return
   return {url, alt: (image as {alt?: string})?.alt || '', width, height}
 }

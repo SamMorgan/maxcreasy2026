@@ -4,6 +4,7 @@ import {useCallback, useEffect, useState} from 'react'
 
 import Image from 'next/image'
 import {useMobileActiveGridIndex} from '@/lib/useMobileActiveGridIndex'
+import {gridImageUrl, lightboxImageUrl} from '@/sanity/lib/utils'
 import {IndexQueryResult} from '@/sanity.types'
 import Link from 'next/link'
 
@@ -98,6 +99,27 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   useEffect(() => {
     if (activeIndex === null) return
 
+    const count = images.length
+    const indices = [
+      activeIndex,
+      (activeIndex + 1) % count,
+      (activeIndex - 1 + count) % count,
+    ]
+
+    indices.forEach((index) => {
+      const image = images[index]
+      if (!image) return
+
+      const url = lightboxImageUrl(image)
+      const img = new window.Image()
+      img.onload = () => markUrlLoaded(url, setLoadedUrls)
+      img.src = url
+    })
+  }, [activeIndex, images])
+
+  useEffect(() => {
+    if (activeIndex === null) return
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') close()
       if (event.key === 'ArrowRight') goTo('next')
@@ -145,9 +167,9 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           <div className="relative m-auto h-full w-full max-h-[calc(100vh-20rem)] max-w-[calc(100vw-4.5rem)]">
             {[...mountedIndices].map((index) => {
               const image = images[index]
-              const url = image?.asset?.url
-              if (!url) return null
+              if (!image?.asset?._id) return null
 
+              const url = lightboxImageUrl(image)
               const isActive = index === activeIndex
               const isLoaded = loadedUrls.has(url)
 
@@ -157,6 +179,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                   src={url}
                   alt={image.alt ?? image.caption ?? ''}
                   fill
+                  unoptimized
                   sizes="calc(100vw - 4.5rem)"
                   aria-hidden={!isActive}
                   className={`absolute inset-0 object-contain pointer-events-none ${
@@ -179,6 +202,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           {images.map((image, index) => {
             if (!image.asset?._id || !image.asset?.metadata?.dimensions?.width || !image.asset?.metadata?.dimensions?.height) return null
             const dimensions = image.asset.metadata.dimensions
+            const gridUrl = gridImageUrl(image)
 
             return (
               <li
@@ -193,20 +217,17 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                   aria-label={image.alt || `View image ${index + 1}`}
                 >
                   <Image
-                    src={image.asset.url}
+                    src={gridUrl}
                     alt={image.alt ?? ''}
                     width={dimensions.width}
                     height={dimensions.height}
-                    //sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, (max-width: 1280px) 14.285vw, 12.5vw"
+                    unoptimized
                     sizes="12.5rem"
-                    onLoad={() => markUrlLoaded(image.asset.url, setLoadedUrls)}
-                    // className={`${dimensions.height > dimensions.width
-                    //     ? 'block h-[50vw] w-auto xl:h-[12.5vw] lg:h-[14.285vw] md:h-[25vw]'
-                    //     : 'block h-auto w-[50vw] xl:w-[12.5vw] lg:w-[14.285vw] md:w-[25vw]'
-                    // }`}
-                    className={`${dimensions.height > dimensions.width
-                      ? 'block w-auto h-50'
-                      : 'block h-auto w-50'
+                    onLoad={() => markUrlLoaded(gridUrl, setLoadedUrls)}
+                    className={`${
+                      dimensions.height > dimensions.width
+                        ? 'block h-auto w-50'
+                        : 'block h-50 w-auto'
                     }`}
                   />
                   {image.caption && (
