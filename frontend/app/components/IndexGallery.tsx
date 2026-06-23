@@ -157,7 +157,6 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                   src={url}
                   alt={image.alt ?? image.caption ?? ''}
                   fill
-                  unoptimized
                   sizes="calc(100vw - 4.5rem)"
                   aria-hidden={!isActive}
                   className={`absolute inset-0 object-contain pointer-events-none ${
@@ -193,20 +192,19 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                   onClick={() => openImage(index)}
                   aria-label={image.alt || `View image ${index + 1}`}
                 >
+                  <div className={`relative ${dimensions.height > dimensions.width
+                      ? 'block h-[50vw] w-auto xl:h-[12.5vw] lg:h-[14.285vw] md:h-[25vw]'
+                      : 'block h-auto w-[50vw] xl:w-[12.5vw] lg:w-[14.285vw] md:w-[25vw]'
+                  }`} style={{aspectRatio: dimensions.width / dimensions.height}}>
                   <Image
                     src={image.asset.url}
                     alt={image.alt ?? ''}
-                    width={dimensions.width}
-                    height={dimensions.height}
+                    fill
                     sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, (max-width: 1280px) 14.285vw, 12.5vw"
-                    unoptimized
                     onLoad={() => markUrlLoaded(image.asset.url, setLoadedUrls)}
-                    className={`block
-                      ${dimensions.height > dimensions.width
-                        ? 'block h-[50vw] w-auto xl:h-[12.5vw] lg:h-[14.285vw] md:h-[25vw]'
-                        : 'block h-auto w-[50vw] xl:w-[12.5vw] lg:w-[14.285vw] md:w-[25vw]'
-                      }`}
+                    className='block'
                   />
+                  </div>
                   {image.caption && (
                     <span
                       className={`absolute top-full left-0 w-full pt-2 text-center text-xs leading-tight max-md:opacity-0 md:opacity-100 md:can-hover:opacity-0 md:can-hover:group-hover:opacity-100 ${
