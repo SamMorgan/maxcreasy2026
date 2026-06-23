@@ -79,7 +79,7 @@ export default async function RootLayout({children}: LayoutProps<'/'>) {
   const {isEnabled: isDraftMode} = await draftMode()
 
   return (
-    <html lang="en" className={`${FacilityBook.variable} bg-white text-black antialiased overscroll-none text-[max(1.25vw,16px)]`}>
+    <html lang="en" className={`${FacilityBook.variable} bg-white text-black antialiased overscroll-none text-[clamp(16px,1.25vw,18px)]`}>
       <body className="font-facility-book text-[0.875rem] leading-[1.125rem]">
         {/* The <Toaster> component is responsible for rendering toast notifications used in /app/client-utils.ts and /app/components/DraftModeToast.tsx */}
         <Toaster />

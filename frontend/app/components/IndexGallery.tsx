@@ -175,7 +175,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           )}
         </div>
       ) : (
-        <ul className="md:flex w-full flex-wrap justify-center gap-y-9 px-4.5 py-25 md:pt-9 max-md:pb-above-dot [container-type:inline-size] md:justify-between">
+        <ul className="sm:flex w-full flex-wrap justify-center gap-y-9 px-4.5 py-25 md:pt-9 max-md:pb-above-dot [container-type:inline-size] md:justify-between">
           {images.map((image, index) => {
             if (!image.asset?._id || !image.asset?.metadata?.dimensions?.width || !image.asset?.metadata?.dimensions?.height) return null
             const dimensions = image.asset.metadata.dimensions
@@ -192,19 +192,23 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                   onClick={() => openImage(index)}
                   aria-label={image.alt || `View image ${index + 1}`}
                 >
-                  <div className={`relative ${dimensions.height > dimensions.width
-                      ? 'block h-[50vw] w-auto xl:h-[12.5vw] lg:h-[14.285vw] md:h-[25vw]'
-                      : 'block h-auto w-[50vw] xl:w-[12.5vw] lg:w-[14.285vw] md:w-[25vw]'
-                  }`} style={{aspectRatio: dimensions.width / dimensions.height}}>
                   <Image
                     src={image.asset.url}
                     alt={image.alt ?? ''}
-                    fill
-                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, (max-width: 1280px) 14.285vw, 12.5vw"
+                    width={dimensions.width}
+                    height={dimensions.height}
+                    //sizes="(max-width: 768px) 50vw, (max-width: 1024px) 25vw, (max-width: 1280px) 14.285vw, 12.5vw"
+                    sizes="12.5rem"
                     onLoad={() => markUrlLoaded(image.asset.url, setLoadedUrls)}
-                    className='block'
+                    // className={`${dimensions.height > dimensions.width
+                    //     ? 'block h-[50vw] w-auto xl:h-[12.5vw] lg:h-[14.285vw] md:h-[25vw]'
+                    //     : 'block h-auto w-[50vw] xl:w-[12.5vw] lg:w-[14.285vw] md:w-[25vw]'
+                    // }`}
+                    className={`${dimensions.height > dimensions.width
+                      ? 'block w-auto h-50'
+                      : 'block h-auto w-50'
+                    }`}
                   />
-                  </div>
                   {image.caption && (
                     <span
                       className={`absolute top-full left-0 w-full pt-2 text-center text-xs leading-tight max-md:opacity-0 md:opacity-100 md:can-hover:opacity-0 md:can-hover:group-hover:opacity-100 ${
