@@ -164,7 +164,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-arrow-right"
           />
 
-          <div className="relative m-auto h-full w-full max-h-[calc(100vh-20rem)] max-w-[calc(100vw-4.5rem)]">
+          <div className="relative m-auto h-full w-full sm:max-h-[calc(100vh-20rem)] max-h-[calc(100vh-10rem)] max-w-[calc(100vw-4.5rem)]">
             {[...mountedIndices].map((index) => {
               const image = images[index]
               if (!image?.asset?._id) return null
@@ -192,7 +192,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           </div>
 
           {activeImage.caption && (
-            <div className="absolute bottom-0 left-0 flex h-40 w-full items-center justify-center text-center">
+            <div className="absolute sm:bottom-0 bottom-6 left-0 sm:flex md:h-40 w-full items-center justify-center text-center">
               <span className="whitespace-pre-wrap">{activeImage.caption}</span>
             </div>
           )}
@@ -222,12 +222,12 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     width={dimensions.width}
                     height={dimensions.height}
                     unoptimized
-                    sizes="12.5rem"
+                    sizes="(max-width: 768px) 60vw, 12.5rem"
                     onLoad={() => markUrlLoaded(gridUrl, setLoadedUrls)}
                     className={`${
-                      dimensions.height > dimensions.width
-                        ? 'block h-auto w-50'
-                        : 'block h-50 w-auto'
+                      dimensions.height <= dimensions.width
+                        ? 'block h-auto md:w-50 w-[calc(100vw-10rem)]'
+                        : 'block h-50 h-[calc(100vw-10rem)] w-auto'
                     }`}
                   />
                   {image.caption && (
