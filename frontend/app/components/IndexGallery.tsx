@@ -3,6 +3,7 @@
 import {useCallback, useEffect, useState} from 'react'
 
 import Image from 'next/image'
+import {useMobileActiveGridIndex} from '@/lib/useMobileActiveGridIndex'
 import {IndexQueryResult} from '@/sanity.types'
 import Link from 'next/link'
 
@@ -56,6 +57,9 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [mountedIndices, setMountedIndices] = useState<Set<number>>(new Set())
   const [loadedUrls, setLoadedUrls] = useState<Set<string>>(new Set())
+  const {focusedIndex: focusedGridIndex, register: registerGridItem} = useMobileActiveGridIndex(
+    images.length,
+  )
 
   const close = useCallback(() => {
     setActiveIndex(null)
@@ -178,7 +182,11 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             const dimensions = image.asset.metadata.dimensions
 
             return (
-              <li key={image._key} className="w-auto px-4.5 md:mb-9 mb-25 md:shrink-0">
+              <li
+                key={image._key}
+                ref={(element) => registerGridItem(index, element)}
+                className="w-auto px-4.5 md:mb-9 mb-25 md:shrink-0"
+              >
                 <button
                   type="button"
                   className="group relative m-auto block cursor-pointer"
@@ -200,7 +208,11 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                       }`}
                   />
                   {image.caption && (
-                    <span className="absolute top-full left-0 w-full pt-2 text-center text-xs leading-tight opacity-100 md:can-hover:opacity-0 md:can-hover:group-hover:opacity-100">
+                    <span
+                      className={`absolute top-full left-0 w-full pt-2 text-center text-xs leading-tight max-md:opacity-0 md:opacity-100 md:can-hover:opacity-0 md:can-hover:group-hover:opacity-100 ${
+                        focusedGridIndex === index ? 'max-md:opacity-100' : ''
+                      }`}
+                    >
                       {image.caption}
                     </span>
                   )}

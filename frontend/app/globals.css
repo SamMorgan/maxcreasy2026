@@ -55,8 +55,7 @@
 }
 
 .dot-pos {
-  @apply fixed z-50 flex items-center gap-4;
-  left: calc(2.25rem + env(safe-area-inset-left, 0px));
+  @apply fixed z-50 flex items-center gap-4 left-5;
   bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
 }
 
