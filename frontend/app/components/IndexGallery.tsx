@@ -217,7 +217,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   return (
     <>
       {activeImage?.asset?._id && activeIndex !== null ? (
-        <div className="fixed inset-0 z-50 flex min-h-screen flex-col items-center justify-center">
+        <div className="fixed inset-0 z-50 flex h-full flex-col items-center justify-center">
           <button
             type="button"
             onClick={close}

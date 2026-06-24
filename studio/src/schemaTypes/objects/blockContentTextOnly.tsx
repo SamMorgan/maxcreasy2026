@@ -1,3 +1,4 @@
+import {ItalicIcon} from '@sanity/icons'
 import {defineArrayMember, defineType, defineField} from 'sanity'
 
 export const blockContentTextOnly = defineType({
@@ -10,7 +11,7 @@ export const blockContentTextOnly = defineType({
       styles: [],
       lists: [], 
       marks: {
-        decorators: [],
+        decorators: [{title: 'Italic', value: 'em', icon: ItalicIcon}],
         annotations: [
           {
             name: 'link',
