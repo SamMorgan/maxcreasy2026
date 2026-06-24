@@ -217,7 +217,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   return (
     <>
       {activeImage?.asset?._id && activeIndex !== null ? (
-        <div className="fixed inset-0 z-50 flex h-full flex-col items-center justify-center">
+        <div className="fixed inset-0 z-50 flex h-svh flex-col items-center justify-center">
           <button
             type="button"
             onClick={close}
@@ -239,7 +239,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-arrow-right"
           />
 
-          <div className="relative m-auto h-full w-full md:max-h-[calc(100svh-20rem)] max-h-[calc(100svh-10rem)] max-w-[calc(100vw-4.5rem)]">
+          <div className="relative m-auto md:h-[calc(100%-20rem)] h-[calc(100%-10rem)] w-[calc(100%-4.5rem)]">
             {[...mountedIndices].map((index) => {
               const image = images[index]
               if (!image?.asset?._id) return null
