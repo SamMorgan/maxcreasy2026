@@ -16,13 +16,6 @@ type IndexGalleryProps = {
   images: IndexImage[]
 }
 
-const MD_COLUMNS = 6
-const XL_COLUMNS = 7
-
-function spacerCount(count: number, columns: number) {
-  return (columns - (count % columns)) % columns
-}
-
 function mobileGridImageHalfHeight(width: number, height: number) {
   if (height > width) {
     return 'calc((100vw - 10rem) / 2)'
@@ -40,28 +33,6 @@ function imageDimensions(image: IndexImage) {
 
 function isRenderableGridImage(image: IndexImage) {
   return imageDimensions(image) !== null && Boolean(image.asset?._id)
-}
-
-function GridSpacers({count, breakpoint}: {count: number; breakpoint: 'md' | 'xl'}) {
-  if (count === 0) return null
-
-  return Array.from({length: count}, (_, index) => (
-    <li
-      key={`spacer-${breakpoint}-${index}`}
-      aria-hidden
-      className={`pointer-events-none invisible max-md:hidden w-auto px-4.5 md:mb-9 md:shrink-0 ${
-        breakpoint === 'md' ? 'xl:hidden' : 'hidden xl:block'
-      }`}
-    >
-      <span
-        className={
-          breakpoint === 'md'
-            ? 'block md:w-[16.667vw]'
-            : 'block w-[14.285vw]'
-        }
-      />
-    </li>
-  ))
 }
 
 function markUrlLoaded(url: string, setLoadedUrls: (fn: (prev: Set<string>) => Set<string>) => void) {
@@ -205,8 +176,6 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   if (images.length === 0) return null
 
   const activeImage = activeIndex !== null ? images[activeIndex] : null
-  const mdSpacerCount = spacerCount(images.length, MD_COLUMNS)
-  const xlSpacerCount = spacerCount(images.length, XL_COLUMNS)
   const firstDimensions = images.map(imageDimensions).find((dimensions) => dimensions !== null)
   const lastDimensions = [...images]
     .reverse()
@@ -340,8 +309,15 @@ export default function IndexGallery({images}: IndexGalleryProps) {
               </li>
             )
           })}
-          <GridSpacers count={mdSpacerCount} breakpoint="md" />
-          <GridSpacers count={xlSpacerCount} breakpoint="xl" />
+          {Array.from({length: 8}, (_, index) => (
+            <li
+              key={`spacer-${index}`}
+              aria-hidden
+              className="pointer-events-none invisible max-md:hidden w-auto px-4.5 md:mb-9 md:shrink-0"
+            >
+              <span className="block md:w-50" />
+            </li>
+          ))}
         </ul>
       )}
       <div className="dot-pos">
