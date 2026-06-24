@@ -239,7 +239,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-arrow-right"
           />
 
-          <div className="relative m-auto h-full w-full md:max-h-[calc(100vh-20rem)] max-h-[calc(100vh-10rem)] max-w-[calc(100vw-4.5rem)]">
+          <div className="relative m-auto h-full w-full md:max-h-[calc(100svh-20rem)] max-h-[calc(100svh-10rem)] max-w-[calc(100vw-4.5rem)]">
             {[...mountedIndices].map((index) => {
               const image = images[index]
               if (!image?.asset?._id) return null
