@@ -2,11 +2,20 @@ import {defineQuery} from 'next-sanity'
 
 export const settingsQuery = defineQuery(`*[_type == "settings"][0]`)
 
+const captionFields = /* groq */ `
+  caption[]{
+    ...,
+    markDefs[]{
+      ...,
+    }
+  }
+`
+
 const imageFields = /* groq */ `
   _key,
   _type,
   alt,
-  caption,
+  ${captionFields},
   asset->{
     _id,
     url,

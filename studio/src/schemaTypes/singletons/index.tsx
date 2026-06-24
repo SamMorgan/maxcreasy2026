@@ -27,7 +27,7 @@ export const index = defineType({
             type: 'image',
             fields: [
               defineField({ name: 'alt', type: 'string' }),
-              defineField({ name: 'caption', type: 'text', rows: 2 }),
+              defineField({ name: 'caption', type: 'blockContentTextOnly' }),
             ],
           }),
         ],

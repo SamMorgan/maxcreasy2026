@@ -54,7 +54,7 @@ export type Index = {
     hotspot?: SanityImageHotspot
     crop?: SanityImageCrop
     alt?: string
-    caption?: string
+    caption?: BlockContentTextOnly
     _type: 'image'
     _key: string
   }>

@@ -14,7 +14,9 @@
     "dev": "sanity dev",
     "sanity:typegen": "sanity schema extract --enforce-required-fields --path ../sanity.schema.json && sanity typegen generate",
     "start": "sanity start",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "migrate:index-captions": "sanity exec ./scripts/migrate-index-captions.ts --with-user-token",
+    "migrate:index-captions:token": "sanity exec ./scripts/migrate-index-captions.ts"
   },
   "dependencies": {
     "@sanity/assist": "^6.0.7",

@@ -261,7 +261,8 @@
               "caption": {
                 "type": "objectAttribute",
                 "value": {
-                  "type": "string"
+                  "type": "inline",
+                  "name": "blockContentTextOnly"
                 },
                 "optional": true
               },

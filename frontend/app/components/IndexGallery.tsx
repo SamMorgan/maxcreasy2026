@@ -3,8 +3,9 @@
 import {useCallback, useEffect, useRef, useState, type CSSProperties} from 'react'
 
 import Image from 'next/image'
+import CustomPortableText from '@/app/components/PortableText'
 import {gridImageUrl, lightboxImageUrl} from '@/sanity/lib/utils'
-import {IndexQueryResult} from '@/sanity.types'
+import {IndexQueryResult, type BlockContentTextOnly} from '@/sanity.types'
 import Link from 'next/link'
 
 export type IndexImage = NonNullable<NonNullable<IndexQueryResult>['images']>[number] & {
@@ -75,7 +76,10 @@ function markUrlLoaded(url: string, setLoadedUrls: (fn: (prev: Set<string>) => S
 export default function IndexGallery({images}: IndexGalleryProps) {
   const listRef = useRef<HTMLUListElement>(null)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(() => {
+    const index = images.findIndex(isRenderableGridImage)
+    return index === -1 ? null : index
+  })
   const [mountedIndices, setMountedIndices] = useState<Set<number>>(new Set())
   const [loadedUrls, setLoadedUrls] = useState<Set<string>>(new Set())
 
@@ -107,26 +111,35 @@ export default function IndexGallery({images}: IndexGalleryProps) {
     }
 
     const pick = () => {
-      const items = listRef.current?.querySelectorAll<HTMLElement>('[data-grid-index]')
-      if (!items?.length) return
+      if (window.matchMedia('(min-width: 48rem)').matches) return
 
-      const centerY = window.innerHeight / 2
+      const markers = listRef.current?.querySelectorAll<HTMLElement>('[data-grid-marker]')
+      if (!markers?.length) return
+
+      const viewportHeight = window.innerHeight
+      const bandCenter = viewportHeight * 0.5
+      const bandTop = bandCenter - viewportHeight * 0.1 // 10% above centre
+      const bandBottom = bandCenter + viewportHeight * 0.05 // 5% below centre
       let best: number | null = null
       let bestDist = Infinity
 
-      items.forEach((el) => {
-        const index = Number(el.dataset.gridIndex)
-        const rect = el.getBoundingClientRect()
-        const dist = Math.abs(rect.top + rect.height / 2 - centerY)
+      markers.forEach((marker) => {
+        const index = Number(marker.dataset.gridMarker)
+        const rect = marker.getBoundingClientRect()
+        const markerY = rect.top + rect.height / 2
+        if (markerY < bandTop || markerY > bandBottom) return
+
+        const dist = Math.abs(markerY - bandCenter)
         if (dist < bestDist) {
           bestDist = dist
           best = index
         }
       })
 
-      if (best !== null) {
-        setFocusedIndex((current) => (current === best ? current : best))
-      }
+      setFocusedIndex((current) => {
+        if (best === null) return window.scrollY === 0 ? current : null
+        return current === best ? current : best
+      })
     }
 
     pick()
@@ -252,7 +265,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                 <Image
                   key={image._key}
                   src={url}
-                  alt={image.alt ?? image.caption ?? ''}
+                  alt={image.alt ?? ''}
                   fill
                   unoptimized
                   sizes="calc(100vw - 4.5rem)"
@@ -266,11 +279,11 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             })}
           </div>
 
-          {activeImage.caption && (
-            <div className="absolute md:bottom-0 bottom-6 left-0 md:flex md:h-40 w-full items-center justify-center text-center">
-              <span className="whitespace-pre-wrap">{activeImage.caption}</span>
+          {activeImage.caption?.length ? (
+            <div className="absolute md:bottom-0 bottom-6 left-0 md:flex md:h-40 w-full items-center justify-center text-center [&_a]:hover:opacity-30">
+              <CustomPortableText value={activeImage.caption as BlockContentTextOnly} />
             </div>
-          )}
+          ) : null}
         </div>
       ) : (
         <ul
@@ -310,14 +323,19 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                         : 'block md:h-50 h-[calc(100vw-10rem)] w-auto'
                     }
                   />
-                  {image.caption && (
-                    <span
+                  <span
+                    data-grid-marker={index}
+                    className="pointer-events-none absolute top-1/2 left-1/2 h-px w-px -translate-1/2 opacity-0 md:hidden"
+                    aria-hidden
+                  />
+                  {image.caption?.length ? (
+                    <div
                       data-active={focusedIndex === index ? 'true' : undefined}
-                      className="grid-caption"
+                      className="grid-caption [&_a]:hover:opacity-30"
                     >
-                      {image.caption}
-                    </span>
-                  )}
+                      <CustomPortableText value={image.caption as BlockContentTextOnly} />
+                    </div>
+                  ) : null}
                 </button>
               </li>
             )

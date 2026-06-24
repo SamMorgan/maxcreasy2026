@@ -54,7 +54,7 @@ export type Index = {
     hotspot?: SanityImageHotspot
     crop?: SanityImageCrop
     alt?: string
-    caption?: string
+    caption?: BlockContentTextOnly
     _type: 'image'
     _key: string
   }>
@@ -403,14 +403,32 @@ export type SettingsQueryResult = {
 
 // Source: sanity/lib/queries.ts
 // Variable: indexQuery
-// Query: *[_type == "index"][0]{  _id,  images[]{  _key,  _type,  alt,  caption,  asset->{    _id,    url,    metadata {      dimensions    }  }}}
+// Query: *[_type == "index"][0]{  _id,  images[]{  _key,  _type,  alt,    caption[]{    ...,    markDefs[]{      ...,    }  },  asset->{    _id,    url,    metadata {      dimensions    }  }}}
 export type IndexQueryResult = {
   _id: string
   images: Array<{
     _key: string
     _type: 'image'
     alt: string | null
-    caption: string | null
+    caption: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'normal'
+      listItem?: never
+      markDefs: Array<{
+        href: string
+        openInNewTab?: boolean
+        _type: 'link'
+        _key: string
+      }> | null
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
     asset: {
       _id: string
       url: string
@@ -482,7 +500,7 @@ import '@sanity/client'
 declare module '@sanity/client' {
   interface SanityQueries {
     '*[_type == "settings"][0]': SettingsQueryResult
-    '*[_type == "index"][0]{\n  _id,\n  images[]{\n  _key,\n  _type,\n  alt,\n  caption,\n  asset->{\n    _id,\n    url,\n    metadata {\n      dimensions\n    }\n  }\n}\n}': IndexQueryResult
+    '*[_type == "index"][0]{\n  _id,\n  images[]{\n  _key,\n  _type,\n  alt,\n  \n  caption[]{\n    ...,\n    markDefs[]{\n      ...,\n    }\n  }\n,\n  asset->{\n    _id,\n    url,\n    metadata {\n      dimensions\n    }\n  }\n}\n}': IndexQueryResult
     '*[_type == "info"][0]{\n  _id,\n  contact,\n  contactNO,\n  bio,\n  bioNO,\n  clientList,\n}': InfoQueryResult
     '\n  *[_type == \'page\' && slug.current == $slug][0]{\n    _id,\n    _type,\n    name,\n    slug,\n    heading,\n    subheading,\n    "pageBuilder": pageBuilder[]{\n      ...,\n      _type == "callToAction" => {\n        ...,\n        button {\n          ...,\n          \n  link {\n      ...,\n      \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n      }\n\n        }\n      },\n      _type == "infoSection" => {\n        content[]{\n          ...,\n          markDefs[]{\n            ...,\n            \n  _type == "link" => {\n    "page": page->slug.current,\n    "post": post->slug.current\n  }\n\n          }\n        }\n      },\n    },\n  }\n': GetPageQueryResult
     '\n  *[_type in ["index", "info"]]{\n    _type,\n    _updatedAt,\n  }\n': SitemapQueryResult

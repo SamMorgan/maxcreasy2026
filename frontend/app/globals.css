@@ -74,7 +74,7 @@
 }
 
 @utility grid-caption {
-  @apply absolute top-full left-0 w-full pt-2 text-center text-xs leading-tight;
+  @apply absolute top-full left-0 w-full pt-2 text-center text-xs leading-tight whitespace-pre-wrap;
 }
 
 @media (width < 48rem) {
