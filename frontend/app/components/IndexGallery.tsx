@@ -257,7 +257,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
       ) : (
         <ul
           ref={listRef}
-          className="mobile-grid-edge-padding md:flex w-full flex-wrap justify-center gap-y-9 px-4.5 md:pt-9 [container-type:inline-size] md:justify-between"
+          className="mobile-grid-edge-padding md:flex w-full flex-wrap justify-center px-4.5 md:pb-18 md:pt-9 [container-type:inline-size] md:justify-between"
           style={mobileEdgePaddingStyle}
         >
           {images.map((image, index) => {
@@ -270,7 +270,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
               <li
                 key={image._key}
                 data-grid-index={index}
-                className={`w-auto px-4.5 md:mb-9 md:shrink-0 ${index !== lastRenderableIndex ? 'mb-25' : ''}`}
+                className={`w-auto px-4.5 md:mb-18 md:shrink-0 ${index !== lastRenderableIndex ? 'mb-25' : ''}`}
               >
                 <button
                   type="button"
@@ -313,7 +313,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             <li
               key={`spacer-${index}`}
               aria-hidden
-              className="pointer-events-none invisible max-md:hidden w-auto px-4.5 md:mb-9 md:shrink-0"
+              className="pointer-events-none invisible max-md:hidden w-auto px-4.5 md:shrink-0"
             >
               <span className="block md:w-50" />
             </li>
