@@ -81,46 +81,36 @@ export default function IndexGallery({images}: IndexGalleryProps) {
       return
     }
 
-    const pick = () => {
-      if (window.matchMedia('(min-width: 48rem)').matches) return
+    const markers = listRef.current?.querySelectorAll<HTMLElement>('[data-grid-marker]')
+    if (!markers?.length) return
 
-      const markers = listRef.current?.querySelectorAll<HTMLElement>('[data-grid-marker]')
-      if (!markers?.length) return
+    // Detection band just below the halfway line (50%–55% of the viewport).
+    // A marker entering the band becomes the active caption and stays active
+    // (we never clear) until the next marker enters, so only one shows at a time.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (window.matchMedia('(min-width: 48rem)').matches) return
 
-      const viewportHeight = window.innerHeight
-      const bandCenter = viewportHeight * 0.5
-      const bandTop = bandCenter - viewportHeight * 0.1 // 10% above centre
-      const bandBottom = bandCenter + viewportHeight * 0.05 // 5% below centre
-      let best: number | null = null
-      let bestDist = Infinity
+        let next: number | null = null
+        let nextY = -Infinity
 
-      markers.forEach((marker) => {
-        const index = Number(marker.dataset.gridMarker)
-        const rect = marker.getBoundingClientRect()
-        const markerY = rect.top + rect.height / 2
-        if (markerY < bandTop || markerY > bandBottom) return
-
-        const dist = Math.abs(markerY - bandCenter)
-        if (dist < bestDist) {
-          bestDist = dist
-          best = index
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue
+          const y = entry.boundingClientRect.top
+          if (y > nextY) {
+            nextY = y
+            next = Number((entry.target as HTMLElement).dataset.gridMarker)
+          }
         }
-      })
 
-      setFocusedIndex((current) => {
-        if (best === null) return window.scrollY === 0 ? current : null
-        return current === best ? current : best
-      })
-    }
+        if (next !== null) setFocusedIndex(next)
+      },
+      {rootMargin: '-50% 0px -45% 0px'},
+    )
 
-    pick()
-    window.addEventListener('scroll', pick, {passive: true})
-    window.addEventListener('resize', pick)
+    markers.forEach((marker) => observer.observe(marker))
 
-    return () => {
-      window.removeEventListener('scroll', pick)
-      window.removeEventListener('resize', pick)
-    }
+    return () => observer.disconnect()
   }, [activeIndex, images.length])
 
   useEffect(() => {
