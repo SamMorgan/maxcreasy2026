@@ -8,6 +8,12 @@ const captionFields = /* groq */ `
     markDefs[]{
       ...,
     }
+  },
+  carouselCaption[]{
+    ...,
+    markDefs[]{
+      ...,
+    }
   }
 `
 

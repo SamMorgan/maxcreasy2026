@@ -55,6 +55,7 @@ export type Index = {
     crop?: SanityImageCrop
     alt?: string
     caption?: BlockContentTextOnly
+    carouselCaption?: BlockContentTextOnly
     _type: 'image'
     _key: string
   }>

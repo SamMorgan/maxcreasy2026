@@ -266,6 +266,14 @@
                 },
                 "optional": true
               },
+              "carouselCaption": {
+                "type": "objectAttribute",
+                "value": {
+                  "type": "inline",
+                  "name": "blockContentTextOnly"
+                },
+                "optional": true
+              },
               "_type": {
                 "type": "objectAttribute",
                 "value": {

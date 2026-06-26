@@ -27,7 +27,18 @@ export const index = defineType({
             type: 'image',
             fields: [
               defineField({ name: 'alt', type: 'string' }),
-              defineField({ name: 'caption', type: 'blockContentTextOnly' }),
+              defineField({ 
+                name: 'caption', 
+                title: 'Caption', 
+                type: 'blockContentTextOnly',
+                description: 'caption for the grid view',
+              }),
+              defineField({ 
+                name: 'carouselCaption', 
+                title: 'Enlarged view caption', 
+                type: 'blockContentTextOnly',
+                description: 'caption for the enlarged image view. Will fallback to the caption field above if empty', 
+              }),
             ],
           }),
         ],
