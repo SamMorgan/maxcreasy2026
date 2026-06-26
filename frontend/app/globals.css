@@ -49,9 +49,12 @@
   font-family: var(--font-facility-book);
 }
 
-.dot {
+/* .dot {
   @apply block h-8 w-8 bg-contain bg-center bg-no-repeat;
   background-image: url('/web-app-manifest-192x192.png');
+} */
+.dot {
+  @apply block h-8 w-8 rounded-full block;
 }
 
 .dot-pos {
