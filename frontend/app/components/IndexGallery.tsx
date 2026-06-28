@@ -193,7 +193,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           <button
             type="button"
             onClick={close}
-            className="absolute top-6 left-9 z-20 cursor-pointer"
+            className="absolute top-7 left-9 z-20 cursor-pointer"
           >
             Index
           </button>
@@ -269,7 +269,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
               >
                 <button
                   type="button"
-                  className="group relative m-auto block cursor-pointer"
+                  className="group relative m-auto block cursor-pointer opacity-0"
                   onClick={() => openImage(index)}
                   aria-label={image.alt || `View image ${index + 1}`}
                 >
@@ -280,7 +280,11 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     height={dimensions.height}
                     unoptimized
                     sizes="(max-width: 768px) 60vw, 12.5rem"
-                    onLoad={() => markUrlLoaded(gridUrl, setLoadedUrls)}
+                    onLoad={(e) => {
+                      e.currentTarget.closest('.opacity-0')?.classList.remove('opacity-0')
+                      markUrlLoaded(gridUrl, setLoadedUrls)
+                    }}
+                    loading="eager"
                     className={
                       dimensions.height <= dimensions.width
                         ? 'block h-auto md:w-50 w-[calc(100vw-10rem)]'
