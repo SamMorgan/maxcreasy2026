@@ -84,9 +84,9 @@ export default function IndexGallery({images}: IndexGalleryProps) {
     const markers = listRef.current?.querySelectorAll<HTMLElement>('[data-grid-marker]')
     if (!markers?.length) return
 
-    // Detection band just below the halfway line (50%–55% of the viewport).
-    // A marker entering the band becomes the active caption and stays active
-    // (we never clear) until the next marker enters, so only one shows at a time.
+    // Detection band is the top half of the viewport (top edge → vertical centre).
+    // Among markers in the band we pick the lowest one (closest to the centre line),
+    // and never clear, so only one caption shows at a time.
     const observer = new IntersectionObserver(
       (entries) => {
         if (window.matchMedia('(min-width: 48rem)').matches) return
@@ -105,7 +105,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
 
         if (next !== null) setFocusedIndex(next)
       },
-      {rootMargin: '-50% 0px -50% 0px'},
+      {rootMargin: '0px 0px -50% 0px'},
     )
 
     markers.forEach((marker) => observer.observe(marker))
