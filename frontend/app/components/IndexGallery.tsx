@@ -85,21 +85,28 @@ export default function IndexGallery({images}: IndexGalleryProps) {
     if (!markers?.length) return
 
     // Detection band is the top half of the viewport (top edge → vertical centre).
-    // Among markers in the band we pick the lowest one (closest to the centre line),
-    // and never clear, so only one caption shows at a time.
+    // The observer callback only reports markers whose intersection *changed*, so we
+    // track all currently-intersecting markers and pick the lowest one (closest to the
+    // centre line) using a fresh measurement. Never clear, so only one caption shows.
+    const intersecting = new Set<HTMLElement>()
     const observer = new IntersectionObserver(
       (entries) => {
         if (window.matchMedia('(min-width: 48rem)').matches) return
 
+        for (const entry of entries) {
+          const target = entry.target as HTMLElement
+          if (entry.isIntersecting) intersecting.add(target)
+          else intersecting.delete(target)
+        }
+
         let next: number | null = null
         let nextY = -Infinity
 
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue
-          const y = entry.boundingClientRect.top
+        for (const target of intersecting) {
+          const y = target.getBoundingClientRect().top
           if (y > nextY) {
             nextY = y
-            next = Number((entry.target as HTMLElement).dataset.gridMarker)
+            next = Number(target.dataset.gridMarker)
           }
         }
 
