@@ -76,10 +76,10 @@ export default function InfoPage({info, suggestedLocale}: InfoPageProps) {
         <div className="max-md:fixed max-md:top-6 max-md:left-6 max-md:z-50">
           <Link href="/">Index</Link>
         </div>
-        <div>
+        <div className="max-md:mb-4.5">
           <InfoSection value={contact} documentId={info._id} path={locale === 'no' ? 'contactNO' : 'contact'} />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 max-md:mb-4.5">
           <InfoSection value={bio} documentId={info._id} path={locale === 'no' ? 'bioNO' : 'bio'} />
         </div>
         <div className="flex-1 flex flex-col">
