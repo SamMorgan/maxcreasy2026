@@ -93,7 +93,7 @@ export default async function RootLayout({children}: LayoutProps<'/'>) {
         {/* The <SanityLive> component is responsible for making all sanityFetch calls in your application live, so should always be rendered. */}
         <SanityLive onError={handleError} />
         <Header />
-        <div className="w-full h-full overflow-auto fixed top-0 left-0">
+        <div className="w-full h-full overflow-auto fixed top-0 left-0 overscroll-none">
         <main className="min-h-[100svh] flex flex-col">{children}</main>
         </div>
         <SpeedInsights />
