@@ -9,7 +9,7 @@ import {VisualEditing} from 'next-sanity/visual-editing'
 import {Toaster} from 'sonner'
 
 import DraftModeToast from '@/app/components/DraftModeToast'
-import Footer from '@/app/components/Footer'
+//import Footer from '@/app/components/Footer'
 import Header from '@/app/components/Header'
 import * as demo from '@/sanity/lib/demo'
 import {sanityFetch, SanityLive} from '@/sanity/lib/live'
@@ -93,8 +93,9 @@ export default async function RootLayout({children}: LayoutProps<'/'>) {
         {/* The <SanityLive> component is responsible for making all sanityFetch calls in your application live, so should always be rendered. */}
         <SanityLive onError={handleError} />
         <Header />
+        <div className="w-full h-full overflow-auto absolute top-0 left-0">
         <main className="min-h-[100svh] flex flex-col">{children}</main>
-        <Footer />
+        </div>
         <SpeedInsights />
       </body>
     </html>
