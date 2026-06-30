@@ -72,7 +72,7 @@ export default function InfoPage({info, suggestedLocale}: InfoPageProps) {
 
   return (
     <>
-      <article className="md:px-9 px-6 py-21 md:flex gap-24 md:pt-9 md:pb-7.75 max-md:pb-above-dot md:[&>div]:max-w-[min(42ch,33vw)] flex-1 [&_p+p]:mt-4.5 [&_a]:hover:opacity-30 [&_em]:italic">
+      <article className="md:px-9 px-6 py-21 md:flex gap-24 md:pt-9 md:pb-7 max-md:pb-above-dot md:[&>div]:max-w-[min(42ch,33vw)] flex-1 [&_p+p]:mt-4.5 [&_a]:hover:opacity-30 [&_em]:italic">
         <div className="max-md:fixed max-md:top-6 max-md:left-6 max-md:z-50">
           <Link href="/">Index</Link>
         </div>

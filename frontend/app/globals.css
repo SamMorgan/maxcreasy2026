@@ -53,13 +53,13 @@
   @apply block h-8 w-8 bg-contain bg-center bg-no-repeat;
   background-image: url('/web-app-manifest-192x192.png');
 } */
-.dot-pos {
-  @apply fixed z-50 flex items-center gap-4 md:left-5 left-6 top-[calc(100svh-3.5rem)];
-  /* bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px)); */
-}
 
 .dot {
   @apply block h-8 w-8 rounded-full block;
+}
+.dot-pos {
+  @apply fixed z-50 flex items-center gap-4 md:left-5 left-6 bottom-5;
+  /* bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));  top-[calc(100svh-3.5rem)]*/
 }
 
 @utility pb-above-dot {

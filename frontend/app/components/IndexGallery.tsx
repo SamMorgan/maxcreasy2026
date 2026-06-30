@@ -286,16 +286,22 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     width={dimensions.width}
                     height={dimensions.height}
                     unoptimized
+                    //sizes="(max-width: 768px) 100vw, 12.5rem"
                     sizes="(max-width: 768px) 60vw, 12.5rem"
                     onLoad={(e) => {
                       e.currentTarget.closest('.opacity-0')?.classList.remove('opacity-0')
                       markUrlLoaded(gridUrl, setLoadedUrls)
                     }}
                     loading="eager"
+                    // className={
+                    //   dimensions.height <= dimensions.width
+                    //     ? 'block h-auto md:w-50 w-[calc(100vw-10rem)]'
+                    //     : 'block md:h-50 h-[calc(100vw-10rem)] w-auto'
+                    // }
                     className={
                       dimensions.height <= dimensions.width
-                        ? 'block h-auto md:w-50 w-[calc(100vw-10rem)]'
-                        : 'block md:h-50 h-[calc(100vw-10rem)] w-auto'
+                        ? 'block h-auto w-[200px]'
+                        : 'block w-auto h-[200px]'
                     }
                   />
                   <span
