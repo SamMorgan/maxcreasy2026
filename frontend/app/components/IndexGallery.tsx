@@ -18,10 +18,12 @@ type IndexGalleryProps = {
 
 function mobileGridImageHalfHeight(width: number, height: number) {
   if (height > width) {
-    return 'calc((100vw - 10rem) / 2)'
+    //return 'calc((100vw - 10rem) / 2)'
+    return '200px'
   }
 
-  return `calc((100vw - 10rem) * ${height} / ${width} / 2)`
+  //return `calc((100vw - 10rem) * ${height} / ${width} / 2)`
+  return `calc(200px * ${height} / ${width} / 2)`
 }
 
 function imageDimensions(image: IndexImage) {
