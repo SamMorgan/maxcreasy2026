@@ -71,8 +71,8 @@
   @media (width < 48rem) {
     padding-top: max(0px, calc(50svh - var(--first-half-h)));
     padding-bottom: max(
-      calc(6.25rem + env(safe-area-inset-bottom, 0px)),
-      max(0px, calc(50svh - var(--last-half-h)))
+      calc(6.25rem + env(safe-area-inset-bottom, 0px) + 2px),
+      max(0px, calc(50svh - var(--last-half-h)) + 2px)
     );
   }
 }
