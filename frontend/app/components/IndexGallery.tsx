@@ -252,7 +252,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
               ? activeImage.carouselCaption
               : activeImage.caption
             return lightboxCaption?.length ? (
-              <div className="absolute md:bottom-0 bottom-6 left-0 md:flex md:h-40 w-full items-center justify-center text-center [&_a]:hover:opacity-30">
+              <div className="absolute md:bottom-0 bottom-6.5 left-0 md:flex md:h-40 w-full items-center justify-center text-center [&_a]:hover:opacity-30">
                 <CustomPortableText value={lightboxCaption as BlockContentTextOnly} />
               </div>
             ) : null
