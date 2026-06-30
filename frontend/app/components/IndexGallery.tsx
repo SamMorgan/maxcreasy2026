@@ -193,7 +193,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           <button
             type="button"
             onClick={close}
-            className="absolute top-7 left-9 z-20 cursor-pointer"
+            className="absolute top-6 md:left-9 left-6 z-20 cursor-pointer"
           >
             Index
           </button>
@@ -211,7 +211,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
             className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-arrow-right"
           />
 
-          <div className="relative m-auto md:h-[calc(100%-20rem)] h-[calc(100%-10rem)] w-[calc(100%-4.5rem)]">
+          <div className="relative m-auto md:h-[calc(100%-20rem)] h-[calc(100%-10rem)] md:w-[calc(100%-4.5rem)] w-[calc(100%-3rem)]">
             {[...mountedIndices].map((index) => {
               const image = images[index]
               if (!image?.asset?._id) return null
