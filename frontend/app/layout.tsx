@@ -2,7 +2,7 @@ import './globals.css'
 
 import {SpeedInsights} from '@vercel/speed-insights/next'
 import type {Metadata, Viewport} from 'next'
-import {Inter, IBM_Plex_Mono} from 'next/font/google'
+//import {Inter, IBM_Plex_Mono} from 'next/font/google'
 import {draftMode} from 'next/headers'
 //import {toPlainText} from 'next-sanity'
 import {VisualEditing} from 'next-sanity/visual-editing'
@@ -93,7 +93,7 @@ export default async function RootLayout({children}: LayoutProps<'/'>) {
         {/* The <SanityLive> component is responsible for making all sanityFetch calls in your application live, so should always be rendered. */}
         <SanityLive onError={handleError} />
         <Header />
-        <div className="w-full h-full overflow-auto absolute top-0 left-0">
+        <div className="w-full h-full overflow-auto fixed top-0 left-0">
         <main className="min-h-[100svh] flex flex-col">{children}</main>
         </div>
         <SpeedInsights />
