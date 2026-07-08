@@ -37,17 +37,21 @@ function isRenderableGridImage(image: IndexImage) {
   return imageDimensions(image) !== null && Boolean(image.asset?._id)
 }
 
-function markUrlLoaded(url: string, setLoadedUrls: (fn: (prev: Set<string>) => Set<string>) => void) {
-  setLoadedUrls((prev) => {
-    if (prev.has(url)) return prev
-    const next = new Set(prev)
-    next.add(url)
-    return next
-  })
+const LIGHTBOX_PRELOAD_RADIUS = 2
+
+function neighborIndices(centerIndex: number, count: number, radius: number) {
+  const indices = new Set<number>()
+  for (let offset = 0; offset <= radius; offset++) {
+    indices.add((centerIndex + offset) % count)
+    if (offset > 0) indices.add((centerIndex - offset + count) % count)
+  }
+  return [...indices]
 }
 
 export default function IndexGallery({images}: IndexGalleryProps) {
   const listRef = useRef<HTMLUListElement>(null)
+  const loadedUrlsRef = useRef(new Set<string>())
+  const preloadingUrlsRef = useRef(new Set<string>())
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [focusedIndex, setFocusedIndex] = useState<number | null>(() => {
     const index = images.findIndex(isRenderableGridImage)
@@ -56,14 +60,56 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   const [mountedIndices, setMountedIndices] = useState<Set<number>>(new Set())
   const [loadedUrls, setLoadedUrls] = useState<Set<string>>(new Set())
 
+  const markUrlLoaded = useCallback((url: string) => {
+    if (loadedUrlsRef.current.has(url)) return
+    loadedUrlsRef.current.add(url)
+    setLoadedUrls((prev) => {
+      if (prev.has(url)) return prev
+      const next = new Set(prev)
+      next.add(url)
+      return next
+    })
+  }, [])
+
+  const preloadLightboxAtIndex = useCallback(
+    (index: number) => {
+      const image = images[index]
+      if (!image?.asset?._id) return
+
+      const url = lightboxImageUrl(image)
+      if (loadedUrlsRef.current.has(url) || preloadingUrlsRef.current.has(url)) return
+
+      preloadingUrlsRef.current.add(url)
+      const img = new window.Image()
+      img.onload = () => {
+        preloadingUrlsRef.current.delete(url)
+        markUrlLoaded(url)
+      }
+      img.onerror = () => preloadingUrlsRef.current.delete(url)
+      img.src = url
+    },
+    [images, markUrlLoaded],
+  )
+
+  const preloadLightboxNeighbors = useCallback(
+    (centerIndex: number, radius = LIGHTBOX_PRELOAD_RADIUS) => {
+      neighborIndices(centerIndex, images.length, radius).forEach(preloadLightboxAtIndex)
+    },
+    [images.length, preloadLightboxAtIndex],
+  )
+
   const close = useCallback(() => {
     setActiveIndex(null)
     setMountedIndices(new Set())
   }, [])
 
-  const openImage = useCallback((index: number) => {
-    setActiveIndex(index)
-  }, [])
+  const openImage = useCallback(
+    (index: number) => {
+      preloadLightboxNeighbors(index)
+      setActiveIndex(index)
+    },
+    [preloadLightboxNeighbors],
+  )
 
   const goTo = useCallback(
     (direction: 'prev' | 'next') => {
@@ -75,6 +121,20 @@ export default function IndexGallery({images}: IndexGalleryProps) {
       })
     },
     [images.length],
+  )
+
+  const handleGridPointerDown = useCallback(
+    (index: number) => {
+      preloadLightboxNeighbors(index, 1)
+    },
+    [preloadLightboxNeighbors],
+  )
+
+  const handleGridPointerEnter = useCallback(
+    (index: number) => {
+      preloadLightboxNeighbors(index, 1)
+    },
+    [preloadLightboxNeighbors],
   )
 
   useEffect(() => {
@@ -125,36 +185,16 @@ export default function IndexGallery({images}: IndexGalleryProps) {
   useEffect(() => {
     if (activeIndex === null) return
 
-    const count = images.length
+    const indices = neighborIndices(activeIndex, images.length, LIGHTBOX_PRELOAD_RADIUS)
+
     setMountedIndices((prev) => {
       const next = new Set(prev)
-      next.add(activeIndex)
-      next.add((activeIndex + 1) % count)
-      next.add((activeIndex - 1 + count) % count)
+      indices.forEach((index) => next.add(index))
       return next
     })
-  }, [activeIndex, images.length])
 
-  useEffect(() => {
-    if (activeIndex === null) return
-
-    const count = images.length
-    const indices = [
-      activeIndex,
-      (activeIndex + 1) % count,
-      (activeIndex - 1 + count) % count,
-    ]
-
-    indices.forEach((index) => {
-      const image = images[index]
-      if (!image) return
-
-      const url = lightboxImageUrl(image)
-      const img = new window.Image()
-      img.onload = () => markUrlLoaded(url, setLoadedUrls)
-      img.src = url
-    })
-  }, [activeIndex, images])
+    preloadLightboxNeighbors(activeIndex)
+  }, [activeIndex, images.length, preloadLightboxNeighbors])
 
   useEffect(() => {
     if (activeIndex === null) return
@@ -241,7 +281,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                   className={`absolute inset-0 object-contain pointer-events-none ${
                     isActive && isLoaded ? 'opacity-100' : 'opacity-0'
                   }`}
-                  onLoad={() => markUrlLoaded(url, setLoadedUrls)}
+                  onLoad={() => markUrlLoaded(url)}
                 />
               )
             })}
@@ -279,6 +319,8 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                 <button
                   type="button"
                   className="group relative m-auto block cursor-pointer opacity-0"
+                  onPointerDown={() => handleGridPointerDown(index)}
+                  onPointerEnter={() => handleGridPointerEnter(index)}
                   onClick={() => openImage(index)}
                   aria-label={image.alt || `View image ${index + 1}`}
                 >
@@ -292,7 +334,7 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     sizes="(max-width: 768px) 60vw, 12.5rem"
                     onLoad={(e) => {
                       e.currentTarget.closest('.opacity-0')?.classList.remove('opacity-0')
-                      markUrlLoaded(gridUrl, setLoadedUrls)
+                      markUrlLoaded(gridUrl)
                     }}
                     loading="eager"
                     // className={
