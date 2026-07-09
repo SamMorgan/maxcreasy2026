@@ -4,7 +4,7 @@ import {useCallback, useEffect, useRef, useState, type CSSProperties} from 'reac
 
 import Image from 'next/image'
 import CustomPortableText from '@/app/components/PortableText'
-import {gridImageUrl, lightboxImageUrl} from '@/sanity/lib/utils'
+import {gridImageUrl, lightboxImageSrc, lightboxImageSrcSet, LIGHTBOX_IMAGE_SIZES} from '@/sanity/lib/utils'
 import {IndexQueryResult, type BlockContentTextOnly} from '@/sanity.types'
 import Link from 'next/link'
 
@@ -37,36 +37,24 @@ function isRenderableGridImage(image: IndexImage) {
   return imageDimensions(image) !== null && Boolean(image.asset?._id)
 }
 
-const LIGHTBOX_PRELOAD_RADIUS = 2
-
-function neighborIndices(centerIndex: number, count: number, radius: number) {
-  const indices = new Set<number>()
-  for (let offset = 0; offset <= radius; offset++) {
-    indices.add((centerIndex + offset) % count)
-    if (offset > 0) indices.add((centerIndex - offset + count) % count)
-  }
-  return [...indices]
+function wrapIndex(index: number, count: number) {
+  return ((index % count) + count) % count
 }
 
 export default function IndexGallery({images}: IndexGalleryProps) {
   const listRef = useRef<HTMLUListElement>(null)
-  const loadedUrlsRef = useRef(new Set<string>())
-  const preloadingUrlsRef = useRef(new Set<string>())
-  const [activeIndex, setActiveIndex] = useState<number | null>(null)
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(() => {
-    const index = images.findIndex(isRenderableGridImage)
-    return index === -1 ? null : index
-  })
-  const [mountedIndices, setMountedIndices] = useState<Set<number>>(new Set())
-  const [loadedUrls, setLoadedUrls] = useState<Set<string>>(new Set())
+  const activeIndexRef = useRef<number | null>(null)
+  const loadedSlideIndicesRef = useRef(new Set<number>())
+  const preloadingSlideIndicesRef = useRef(new Set<number>())
+  const [loadedSlideIndices, setLoadedSlideIndices] = useState<Set<number>>(new Set())
 
-  const markUrlLoaded = useCallback((url: string) => {
-    if (loadedUrlsRef.current.has(url)) return
-    loadedUrlsRef.current.add(url)
-    setLoadedUrls((prev) => {
-      if (prev.has(url)) return prev
+  const markSlideLoaded = useCallback((index: number) => {
+    if (loadedSlideIndicesRef.current.has(index)) return
+    loadedSlideIndicesRef.current.add(index)
+    setLoadedSlideIndices((prev) => {
+      if (prev.has(index)) return prev
       const next = new Set(prev)
-      next.add(url)
+      next.add(index)
       return next
     })
   }, [])
@@ -75,66 +63,126 @@ export default function IndexGallery({images}: IndexGalleryProps) {
     (index: number) => {
       const image = images[index]
       if (!image?.asset?._id) return
-
-      const url = lightboxImageUrl(image)
-      if (loadedUrlsRef.current.has(url) || preloadingUrlsRef.current.has(url)) return
-
-      preloadingUrlsRef.current.add(url)
-      const img = new window.Image()
-      img.onload = () => {
-        preloadingUrlsRef.current.delete(url)
-        markUrlLoaded(url)
+      if (
+        loadedSlideIndicesRef.current.has(index) ||
+        preloadingSlideIndicesRef.current.has(index)
+      ) {
+        return
       }
-      img.onerror = () => preloadingUrlsRef.current.delete(url)
-      img.src = url
+
+      preloadingSlideIndicesRef.current.add(index)
+      const img = new window.Image()
+      img.sizes = LIGHTBOX_IMAGE_SIZES
+      img.srcset = lightboxImageSrcSet(image)
+      img.src = lightboxImageSrc(image)
+      img.onload = () => {
+        preloadingSlideIndicesRef.current.delete(index)
+        markSlideLoaded(index)
+      }
+      img.onerror = () => preloadingSlideIndicesRef.current.delete(index)
     },
-    [images, markUrlLoaded],
+    [images, markSlideLoaded],
   )
 
-  const preloadLightboxNeighbors = useCallback(
-    (centerIndex: number, radius = LIGHTBOX_PRELOAD_RADIUS) => {
-      neighborIndices(centerIndex, images.length, radius).forEach(preloadLightboxAtIndex)
-    },
-    [images.length, preloadLightboxAtIndex],
+  const isSlideLoaded = useCallback(
+    (index: number) => loadedSlideIndices.has(index),
+    [loadedSlideIndices],
   )
+
+  const imageCount = images.length
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(() => {
+    const index = images.findIndex(isRenderableGridImage)
+    return index === -1 ? null : index
+  })
+  const [mountedIndices, setMountedIndices] = useState<Set<number>>(new Set())
+
+  const mountAndPreload = useCallback(
+    (indices: number[]) => {
+      indices.forEach(preloadLightboxAtIndex)
+      setMountedIndices((prev) => {
+        const next = new Set(prev)
+        indices.forEach((index) => next.add(index))
+        return next
+      })
+    },
+    [preloadLightboxAtIndex],
+  )
+
+  // Keep prev, current, and next preloaded whenever the active slide changes.
+  const ensureAdjacentLoaded = useCallback(
+    (centerIndex: number) => {
+      if (imageCount === 0) return
+      mountAndPreload([
+        centerIndex,
+        wrapIndex(centerIndex + 1, imageCount),
+        wrapIndex(centerIndex - 1, imageCount),
+      ])
+    },
+    [imageCount, mountAndPreload],
+  )
+
+  useEffect(() => {
+    activeIndexRef.current = activeIndex
+  }, [activeIndex])
+
+  useEffect(() => {
+    if (activeIndex === null) return
+    ensureAdjacentLoaded(activeIndex)
+  }, [activeIndex, ensureAdjacentLoaded])
 
   const close = useCallback(() => {
     setActiveIndex(null)
     setMountedIndices(new Set())
   }, [])
 
-  const openImage = useCallback(
-    (index: number) => {
-      preloadLightboxNeighbors(index)
-      setActiveIndex(index)
-    },
-    [preloadLightboxNeighbors],
-  )
+  const openImage = useCallback((index: number) => {
+    setActiveIndex(index)
+  }, [])
 
   const goTo = useCallback(
     (direction: 'prev' | 'next') => {
       setActiveIndex((current) => {
-        if (current === null || images.length === 0) return current
+        if (current === null || imageCount === 0) return current
         return direction === 'next'
-          ? (current + 1) % images.length
-          : (current - 1 + images.length) % images.length
+          ? wrapIndex(current + 1, imageCount)
+          : wrapIndex(current - 1, imageCount)
       })
     },
-    [images.length],
+    [imageCount],
   )
 
-  const handleGridPointerDown = useCallback(
-    (index: number) => {
-      preloadLightboxNeighbors(index, 1)
+  const handleNavPointerDown = useCallback(
+    (direction: 'prev' | 'next') => {
+      const current = activeIndexRef.current
+      if (current === null || imageCount === 0) return
+
+      const destination =
+        direction === 'next'
+          ? wrapIndex(current + 1, imageCount)
+          : wrapIndex(current - 1, imageCount)
+
+      const beyond =
+        direction === 'next'
+          ? wrapIndex(destination + 1, imageCount)
+          : wrapIndex(destination - 1, imageCount)
+
+      // Destination should already be preloaded; fetch one more in travel direction.
+      mountAndPreload([destination, beyond])
     },
-    [preloadLightboxNeighbors],
+    [imageCount, mountAndPreload],
   )
 
-  const handleGridPointerEnter = useCallback(
+  const handleGridPreload = useCallback(
     (index: number) => {
-      preloadLightboxNeighbors(index, 1)
+      if (imageCount === 0) return
+      mountAndPreload([
+        index,
+        wrapIndex(index + 1, imageCount),
+        wrapIndex(index - 1, imageCount),
+      ])
     },
-    [preloadLightboxNeighbors],
+    [imageCount, mountAndPreload],
   )
 
   useEffect(() => {
@@ -181,20 +229,6 @@ export default function IndexGallery({images}: IndexGalleryProps) {
 
     return () => observer.disconnect()
   }, [activeIndex, images.length])
-
-  useEffect(() => {
-    if (activeIndex === null) return
-
-    const indices = neighborIndices(activeIndex, images.length, LIGHTBOX_PRELOAD_RADIUS)
-
-    setMountedIndices((prev) => {
-      const next = new Set(prev)
-      indices.forEach((index) => next.add(index))
-      return next
-    })
-
-    preloadLightboxNeighbors(activeIndex)
-  }, [activeIndex, images.length, preloadLightboxNeighbors])
 
   useEffect(() => {
     if (activeIndex === null) return
@@ -250,12 +284,14 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           <button
             type="button"
             aria-label="Previous image"
+            onPointerDown={() => handleNavPointerDown('prev')}
             onClick={() => goTo('prev')}
             className="absolute inset-y-0 left-0 z-10 w-1/2 cursor-arrow-left"
           />
           <button
             type="button"
             aria-label="Next image"
+            onPointerDown={() => handleNavPointerDown('next')}
             onClick={() => goTo('next')}
             className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-arrow-right"
           />
@@ -265,23 +301,23 @@ export default function IndexGallery({images}: IndexGalleryProps) {
               const image = images[index]
               if (!image?.asset?._id) return null
 
-              const url = lightboxImageUrl(image)
+              const src = lightboxImageSrc(image)
+              const srcSet = lightboxImageSrcSet(image)
               const isActive = index === activeIndex
-              const isLoaded = loadedUrls.has(url)
+              const isLoaded = isSlideLoaded(index)
 
               return (
-                <Image
+                <img
                   key={image._key}
-                  src={url}
+                  src={src}
+                  srcSet={srcSet}
+                  sizes={LIGHTBOX_IMAGE_SIZES}
                   alt={image.alt ?? ''}
-                  fill
-                  unoptimized
-                  sizes="calc(100vw - 4.5rem)"
                   aria-hidden={!isActive}
-                  className={`absolute inset-0 object-contain pointer-events-none ${
+                  className={`absolute inset-0 h-full w-full object-contain pointer-events-none ${
                     isActive && isLoaded ? 'opacity-100' : 'opacity-0'
                   }`}
-                  onLoad={() => markUrlLoaded(url)}
+                  onLoad={() => markSlideLoaded(index)}
                 />
               )
             })}
@@ -319,8 +355,8 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                 <button
                   type="button"
                   className="group relative m-auto block cursor-pointer opacity-0"
-                  onPointerDown={() => handleGridPointerDown(index)}
-                  onPointerEnter={() => handleGridPointerEnter(index)}
+                  onPointerDown={() => handleGridPreload(index)}
+                  onPointerEnter={() => handleGridPreload(index)}
                   onClick={() => openImage(index)}
                   aria-label={image.alt || `View image ${index + 1}`}
                 >
@@ -334,7 +370,6 @@ export default function IndexGallery({images}: IndexGalleryProps) {
                     sizes="(max-width: 768px) 60vw, 12.5rem"
                     onLoad={(e) => {
                       e.currentTarget.closest('.opacity-0')?.classList.remove('opacity-0')
-                      markUrlLoaded(gridUrl)
                     }}
                     loading="eager"
                     // className={

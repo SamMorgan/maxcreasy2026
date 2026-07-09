@@ -19,9 +19,32 @@ export function gridImageUrl(source: SanityImageSource) {
   return urlFor(source).width(800).quality(92).format('jpg').fit('max').url()
 }
 
-/** Lightbox — large JPEG at q95 to reduce gradient banding vs WebP at lower quality. */
+/** Lightbox srcset widths — browser picks based on sizes + device pixel ratio. */
+export const LIGHTBOX_IMAGE_WIDTHS = [1200, 1800, 2400, 2800] as const
+
+/** Must match the lightbox container width in IndexGallery. */
+export const LIGHTBOX_IMAGE_SIZES = '(min-width: 48rem) calc(100vw - 4.5rem), calc(100vw - 3rem)'
+
+function lightboxImageAtWidth(source: SanityImageSource, width: number) {
+  return urlFor(source).width(width).quality(95).format('jpg').fit('max').url()
+}
+
+/** Lightbox srcset — responsive JPEGs at q95 to reduce gradient banding. */
+export function lightboxImageSrcSet(source: SanityImageSource) {
+  return LIGHTBOX_IMAGE_WIDTHS.map((width) => `${lightboxImageAtWidth(source, width)} ${width}w`).join(
+    ', ',
+  )
+}
+
+/** Lightbox fallback src — largest candidate for browsers without srcset. */
+export function lightboxImageSrc(source: SanityImageSource) {
+  const largest = LIGHTBOX_IMAGE_WIDTHS[LIGHTBOX_IMAGE_WIDTHS.length - 1]
+  return lightboxImageAtWidth(source, largest)
+}
+
+/** @deprecated Use lightboxImageSrcSet — kept for any single-URL callers. */
 export function lightboxImageUrl(source: SanityImageSource) {
-  return urlFor(source).width(2800).quality(95).format('jpg').fit('max').url()
+  return lightboxImageSrc(source)
 }
 
 export function resolveOpenGraphImage(
