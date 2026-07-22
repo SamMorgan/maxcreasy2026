@@ -1,7 +1,7 @@
 'use client'
 
 import useEmblaCarousel from 'embla-carousel-react'
-import {useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent} from 'react'
+import {useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent} from 'react'
 
 import Image from 'next/image'
 import CustomPortableText from '@/app/components/PortableText'
@@ -128,22 +128,74 @@ function isLightboxPreloadIndex(index: number, selectedIndex: number, count: num
   return false
 }
 
+const LIGHTBOX_PRELOAD_RADIUS = 2
+
+function lightboxIndicesToPreload(center: number, count: number, radius = LIGHTBOX_PRELOAD_RADIUS) {
+  const indices = [center]
+  for (let offset = 1; offset <= radius; offset++) {
+    indices.push(wrapIndex(center + offset, count))
+    indices.push(wrapIndex(center - offset, count))
+  }
+  return indices
+}
+
+function preloadLightboxImage(image: IndexImage) {
+  if (!image.asset?._id) return
+
+  const img = new window.Image()
+  img.sizes = LIGHTBOX_IMAGE_SIZES
+  img.srcset = lightboxImageSrcSet(image)
+  img.src = lightboxImageSrc(image)
+}
+
+function forceImageLoad(img: HTMLImageElement) {
+  if (img.complete) return
+
+  img.loading = 'eager'
+  const { src, srcset, sizes } = img
+  img.removeAttribute('src')
+  if (srcset) img.srcset = srcset
+  if (sizes) img.sizes = sizes
+  if (src) img.src = src
+}
+
+function arrayIndexToSlideIndex(images: IndexImage[], arrayIndex: number) {
+  let slideIndex = 0
+
+  for (let index = 0; index < images.length; index++) {
+    if (!images[index].asset?._id) continue
+    if (index === arrayIndex) return slideIndex
+    slideIndex++
+  }
+
+  return 0
+}
+
 function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
-  const [selectedIndex, setSelectedIndex] = useState(startIndex)
+  const lightboxImages = useMemo(
+    () => images.filter((image) => Boolean(image.asset?._id)),
+    [images],
+  )
+  const startSlideIndex = useMemo(
+    () => arrayIndexToSlideIndex(images, startIndex),
+    [images, startIndex],
+  )
+  const [selectedIndex, setSelectedIndex] = useState(startSlideIndex)
   const pointerStartRef = useRef<{x: number; y: number} | null>(null)
+  const imgRefs = useRef(new Map<number, HTMLImageElement>())
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     duration: 0,
-    startIndex,
+    startIndex: startSlideIndex,
     align: 'start',
     watchDrag: false,
   })
 
   useEffect(() => {
     if (!emblaApi) return
-    emblaApi.scrollTo(startIndex, true)
-    setSelectedIndex(startIndex)
-  }, [emblaApi, startIndex])
+    emblaApi.scrollTo(startSlideIndex, true)
+    setSelectedIndex(startSlideIndex)
+  }, [emblaApi, startSlideIndex])
 
   useEffect(() => {
     if (!emblaApi) return
@@ -157,13 +209,65 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
     }
   }, [emblaApi])
 
+  const preloadAroundIndex = useCallback(
+    (center: number, radius = LIGHTBOX_PRELOAD_RADIUS) => {
+      if (lightboxImages.length === 0) return
+
+      for (const index of lightboxIndicesToPreload(center, lightboxImages.length, radius)) {
+        const image = lightboxImages[index]
+        if (!image) continue
+
+        preloadLightboxImage(image)
+
+        const img = imgRefs.current.get(index)
+        if (img && !img.complete) forceImageLoad(img)
+      }
+    },
+    [lightboxImages],
+  )
+
+  useEffect(() => {
+    preloadAroundIndex(selectedIndex)
+  }, [selectedIndex, preloadAroundIndex])
+
+  const goPrev = useCallback(() => {
+    preloadAroundIndex(emblaApi?.selectedScrollSnap() ?? selectedIndex, LIGHTBOX_PRELOAD_RADIUS + 1)
+    emblaApi?.scrollPrev()
+  }, [emblaApi, preloadAroundIndex, selectedIndex])
+
+  const goNext = useCallback(() => {
+    preloadAroundIndex(emblaApi?.selectedScrollSnap() ?? selectedIndex, LIGHTBOX_PRELOAD_RADIUS + 1)
+    emblaApi?.scrollNext()
+  }, [emblaApi, preloadAroundIndex, selectedIndex])
+
+  const preloadOnNavPointerDown = useCallback(
+    (direction: 'prev' | 'next') => {
+      if (!emblaApi || lightboxImages.length === 0) return
+
+      const step = direction === 'next' ? 1 : -1
+      const current = emblaApi.selectedScrollSnap()
+
+      for (let offset = 1; offset <= LIGHTBOX_PRELOAD_RADIUS + 1; offset++) {
+        const index = wrapIndex(current + step * offset, lightboxImages.length)
+        const image = lightboxImages[index]
+        if (!image) continue
+
+        preloadLightboxImage(image)
+
+        const img = imgRefs.current.get(index)
+        if (img && !img.complete) forceImageLoad(img)
+      }
+    },
+    [emblaApi, lightboxImages],
+  )
+
   useEffect(() => {
     if (!emblaApi) return
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
-      if (event.key === 'ArrowRight') emblaApi.scrollNext()
-      if (event.key === 'ArrowLeft') emblaApi.scrollPrev()
+      if (event.key === 'ArrowRight') goNext()
+      if (event.key === 'ArrowLeft') goPrev()
     }
 
     window.addEventListener('keydown', onKeyDown)
@@ -171,23 +275,19 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
     return () => {
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [emblaApi, onClose])
-
-  const goPrev = useCallback(() => {
-    emblaApi?.scrollPrev()
-  }, [emblaApi])
-
-  const goNext = useCallback(() => {
-    emblaApi?.scrollNext()
-  }, [emblaApi])
+  }, [emblaApi, onClose, goNext, goPrev])
 
   const resetPointer = useCallback(() => {
     pointerStartRef.current = null
   }, [])
 
-  const handlePointerDown = useCallback((event: PointerEvent<HTMLDivElement>) => {
-    pointerStartRef.current = {x: event.clientX, y: event.clientY}
-  }, [])
+  const handlePointerDown = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      pointerStartRef.current = {x: event.clientX, y: event.clientY}
+      preloadAroundIndex(selectedIndex, LIGHTBOX_PRELOAD_RADIUS + 1)
+    },
+    [preloadAroundIndex, selectedIndex],
+  )
 
   const handlePointerUp = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
@@ -204,8 +304,8 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
       const swipeThreshold = 40
 
       if (Math.abs(dx) >= swipeThreshold && Math.abs(dx) > Math.abs(dy)) {
-        if (dx < 0) emblaApi.scrollNext()
-        else emblaApi.scrollPrev()
+        if (dx < 0) goNext()
+        else goPrev()
         return
       }
 
@@ -214,10 +314,10 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
       const bounds = event.currentTarget.getBoundingClientRect()
       const clickX = event.clientX - bounds.left
 
-      if (clickX < bounds.width / 2) emblaApi.scrollPrev()
-      else emblaApi.scrollNext()
+      if (clickX < bounds.width / 2) goPrev()
+      else goNext()
     },
-    [emblaApi],
+    [emblaApi, goNext, goPrev],
   )
 
   return (
@@ -233,12 +333,14 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
       <button
         type="button"
         aria-label="Previous image"
+        onPointerDown={() => preloadOnNavPointerDown('prev')}
         onClick={goPrev}
         className="absolute inset-y-0 left-0 z-10 hidden w-1/2 cursor-arrow-left can-hover:block"
       />
       <button
         type="button"
         aria-label="Next image"
+        onPointerDown={() => preloadOnNavPointerDown('next')}
         onClick={goNext}
         className="absolute inset-y-0 right-0 z-10 hidden w-1/2 cursor-arrow-right can-hover:block"
       />
@@ -251,11 +353,9 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
         onPointerCancel={resetPointer}
       >
         <div className="flex h-full">
-          {images.map((image, index) => {
-            if (!image.asset?._id) return null
-
+          {lightboxImages.map((image, index) => {
             const isSelected = index === selectedIndex
-            const isNeighbor = isLightboxPreloadIndex(index, selectedIndex, images.length)
+            const isNeighbor = isLightboxPreloadIndex(index, selectedIndex, lightboxImages.length)
             const caption = lightboxCaption(image)
 
             return (
@@ -266,27 +366,20 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
               >
                 <div className="relative flex h-full flex-col px-6 md:px-9">
                   <div className="mt-auto flex h-[calc(100svh-9.25rem)] items-center justify-center md:h-[calc(100svh-20rem)] relative">
-                    {/* <img
+                    <img
+                      ref={(node) => {
+                        if (node) imgRefs.current.set(index, node)
+                        else imgRefs.current.delete(index)
+                      }}
                       src={lightboxImageSrc(image)}
                       srcSet={lightboxImageSrcSet(image)}
                       sizes={LIGHTBOX_IMAGE_SIZES}
                       alt={image.alt ?? ''}
                       draggable={false}
                       loading={isSelected || isNeighbor ? 'eager' : 'lazy'}
-                      className="max-h-full max-w-full object-contain pointer-events-none"
-                    /> */}
-                    {image.asset?.url && (
-                    <Image
-                      src={image.asset?.url ?? ''}
-                      //srcSet={lightboxImageSrcSet(image)}
-                      sizes='100vw'
-                      fill
-                      alt={image.alt ?? ''}
-                      draggable={false}
-                      loading={isSelected || isNeighbor ? 'eager' : 'lazy'}
+                      fetchPriority={isSelected ? 'high' : isNeighbor ? 'low' : 'auto'}
                       className="max-h-full max-w-full object-contain pointer-events-none"
                     />
-                    )}
                   </div>
 
                   {caption?.length ? (
