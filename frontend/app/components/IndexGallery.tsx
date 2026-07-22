@@ -1,6 +1,7 @@
 'use client'
 
-import {useCallback, useEffect, useRef, useState, type CSSProperties} from 'react'
+import useEmblaCarousel from 'embla-carousel-react'
+import {useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent} from 'react'
 
 import Image from 'next/image'
 import CustomPortableText from '@/app/components/PortableText'
@@ -37,153 +38,228 @@ function isRenderableGridImage(image: IndexImage) {
   return imageDimensions(image) !== null && Boolean(image.asset?._id)
 }
 
-function wrapIndex(index: number, count: number) {
-  return ((index % count) + count) % count
+function revealLoadedImage(image: HTMLImageElement) {
+  image.closest('[data-grid-item]')?.classList.remove('opacity-0')
+}
+
+function GridThumbnail({
+  image,
+  index,
+  isLast,
+  focusedIndex,
+  onOpen,
+}: {
+  image: IndexImage
+  index: number
+  isLast: boolean
+  focusedIndex: number | null
+  onOpen: (index: number) => void
+}) {
+  const dimensions = image.asset!.metadata!.dimensions!
+  const gridUrl = gridImageUrl(image)
+
+  return (
+    <li
+      data-grid-index={index}
+      className={`w-auto px-4.5 md:mb-18 md:shrink-0 ${!isLast ? 'mb-25' : ''}`}
+    >
+      <button
+        type="button"
+        data-grid-item
+        className="group relative m-auto block cursor-pointer opacity-0"
+        onClick={() => onOpen(index)}
+        aria-label={image.alt || `View image ${index + 1}`}
+      >
+        <Image
+          src={gridUrl}
+          alt={image.alt ?? ''}
+          width={dimensions.width}
+          height={dimensions.height}
+          unoptimized
+          sizes="(max-width: 768px) 60vw, 12.5rem"
+          loading={index < 6 ? 'eager' : 'lazy'}
+          onLoad={(event) => revealLoadedImage(event.currentTarget)}
+          ref={(node) => {
+            if (node?.complete && node.naturalWidth > 0) revealLoadedImage(node)
+          }}
+          className={
+            dimensions.height <= dimensions.width
+              ? 'block h-auto w-[200px]'
+              : 'block w-auto h-[200px]'
+          }
+        />
+        <span
+          data-grid-marker={index}
+          className="pointer-events-none absolute top-1/2 left-1/2 h-px w-px -translate-1/2 opacity-0 md:hidden"
+          aria-hidden
+        />
+        {image.caption?.length ? (
+          <div
+            data-active={focusedIndex === index ? 'true' : undefined}
+            className="grid-caption [&_a]:hover:opacity-30"
+          >
+            <CustomPortableText value={image.caption as BlockContentTextOnly} />
+          </div>
+        ) : null}
+      </button>
+    </li>
+  )
+}
+
+type IndexLightboxProps = {
+  images: IndexImage[]
+  startIndex: number
+  onClose: () => void
+}
+
+function lightboxCaption(image: IndexImage) {
+  return image.carouselCaption?.length ? image.carouselCaption : image.caption
+}
+
+function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
+  const [selectedIndex, setSelectedIndex] = useState(startIndex)
+  const dragStartedRef = useRef(false)
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: true,
+    duration: 0,
+    startIndex,
+    align: 'start',
+  })
+
+  useEffect(() => {
+    if (!emblaApi) return
+    emblaApi.scrollTo(startIndex, true)
+    setSelectedIndex(startIndex)
+  }, [emblaApi, startIndex])
+
+  useEffect(() => {
+    if (!emblaApi) return
+
+    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap())
+    const onPointerDown = () => {
+      dragStartedRef.current = false
+    }
+    const onScroll = () => {
+      dragStartedRef.current = true
+    }
+
+    emblaApi.on('select', onSelect)
+    emblaApi.on('pointerDown', onPointerDown)
+    emblaApi.on('scroll', onScroll)
+    onSelect()
+
+    return () => {
+      emblaApi.off('select', onSelect)
+      emblaApi.off('pointerDown', onPointerDown)
+      emblaApi.off('scroll', onScroll)
+    }
+  }, [emblaApi])
+
+  useEffect(() => {
+    if (!emblaApi) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+      if (event.key === 'ArrowRight') emblaApi.scrollNext()
+      if (event.key === 'ArrowLeft') emblaApi.scrollPrev()
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+    }
+  }, [emblaApi, onClose])
+
+  const handleViewportClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (!emblaApi || dragStartedRef.current) return
+
+      const bounds = event.currentTarget.getBoundingClientRect()
+      const clickX = event.clientX - bounds.left
+
+      if (clickX < bounds.width / 2) emblaApi.scrollPrev()
+      else emblaApi.scrollNext()
+    },
+    [emblaApi],
+  )
+
+  return (
+    <div className="fixed inset-0 z-50 h-svh">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-6 md:left-9 left-6 z-20 cursor-pointer"
+      >
+        Index
+      </button>
+
+      <div
+        className="h-full w-full overflow-hidden cursor-grab touch-pan-x active:cursor-grabbing"
+        ref={emblaRef}
+        onClick={handleViewportClick}
+      >
+        <div className="flex h-full">
+          {images.map((image, index) => {
+            if (!image.asset?._id) return null
+
+            const isSelected = index === selectedIndex
+            const isNeighbor =
+              index === selectedIndex - 1 ||
+              index === selectedIndex + 1 ||
+              (selectedIndex === 0 && index === images.length - 1) ||
+              (selectedIndex === images.length - 1 && index === 0)
+            const caption = lightboxCaption(image)
+
+            return (
+              <div
+                key={image._key}
+                className="h-full min-w-0 flex-[0_0_100%] select-none"
+                aria-hidden={!isSelected}
+              >
+                <div className="flex h-full flex-col px-6 md:gap-0 md:px-9 relative">
+                  <div className="flex min-h-0 items-center justify-center md:items-center md:h-[calc(100%-20rem)] h-[calc(100%-9.25rem)] mt-auto">
+                    <img
+                      src={lightboxImageSrc(image)}
+                      srcSet={lightboxImageSrcSet(image)}
+                      sizes={LIGHTBOX_IMAGE_SIZES}
+                      alt={image.alt ?? ''}
+                      draggable={false}
+                      loading={isSelected || isNeighbor ? 'eager' : 'lazy'}
+                      className="max-h-full max-w-full object-contain pointer-events-none"
+                    />
+                  </div>
+
+                  {caption?.length ? (
+                    <div className="shrink-0 h-18.5 text-center flex md:h-40 items-center justify-center [&_a]:hover:opacity-30">
+                      <CustomPortableText value={caption as BlockContentTextOnly} />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function IndexGallery({images}: IndexGalleryProps) {
   const listRef = useRef<HTMLUListElement>(null)
-  const activeIndexRef = useRef<number | null>(null)
-  const loadedSlideIndicesRef = useRef(new Set<number>())
-  const preloadingSlideIndicesRef = useRef(new Set<number>())
-  const [loadedSlideIndices, setLoadedSlideIndices] = useState<Set<number>>(new Set())
-
-  const markSlideLoaded = useCallback((index: number) => {
-    if (loadedSlideIndicesRef.current.has(index)) return
-    loadedSlideIndicesRef.current.add(index)
-    setLoadedSlideIndices((prev) => {
-      if (prev.has(index)) return prev
-      const next = new Set(prev)
-      next.add(index)
-      return next
-    })
-  }, [])
-
-  const preloadLightboxAtIndex = useCallback(
-    (index: number) => {
-      const image = images[index]
-      if (!image?.asset?._id) return
-      if (
-        loadedSlideIndicesRef.current.has(index) ||
-        preloadingSlideIndicesRef.current.has(index)
-      ) {
-        return
-      }
-
-      preloadingSlideIndicesRef.current.add(index)
-      const img = new window.Image()
-      img.sizes = LIGHTBOX_IMAGE_SIZES
-      img.srcset = lightboxImageSrcSet(image)
-      img.src = lightboxImageSrc(image)
-      img.onload = () => {
-        preloadingSlideIndicesRef.current.delete(index)
-        markSlideLoaded(index)
-      }
-      img.onerror = () => preloadingSlideIndicesRef.current.delete(index)
-    },
-    [images, markSlideLoaded],
-  )
-
-  const isSlideLoaded = useCallback(
-    (index: number) => loadedSlideIndices.has(index),
-    [loadedSlideIndices],
-  )
-
-  const imageCount = images.length
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [focusedIndex, setFocusedIndex] = useState<number | null>(() => {
     const index = images.findIndex(isRenderableGridImage)
     return index === -1 ? null : index
   })
-  const [mountedIndices, setMountedIndices] = useState<Set<number>>(new Set())
-
-  const mountAndPreload = useCallback(
-    (indices: number[]) => {
-      indices.forEach(preloadLightboxAtIndex)
-      setMountedIndices((prev) => {
-        const next = new Set(prev)
-        indices.forEach((index) => next.add(index))
-        return next
-      })
-    },
-    [preloadLightboxAtIndex],
-  )
-
-  // Keep prev, current, and next preloaded whenever the active slide changes.
-  const ensureAdjacentLoaded = useCallback(
-    (centerIndex: number) => {
-      if (imageCount === 0) return
-      mountAndPreload([
-        centerIndex,
-        wrapIndex(centerIndex + 1, imageCount),
-        wrapIndex(centerIndex - 1, imageCount),
-      ])
-    },
-    [imageCount, mountAndPreload],
-  )
-
-  useEffect(() => {
-    activeIndexRef.current = activeIndex
-  }, [activeIndex])
-
-  useEffect(() => {
-    if (activeIndex === null) return
-    ensureAdjacentLoaded(activeIndex)
-  }, [activeIndex, ensureAdjacentLoaded])
 
   const close = useCallback(() => {
     setActiveIndex(null)
-    setMountedIndices(new Set())
   }, [])
 
   const openImage = useCallback((index: number) => {
     setActiveIndex(index)
   }, [])
-
-  const goTo = useCallback(
-    (direction: 'prev' | 'next') => {
-      setActiveIndex((current) => {
-        if (current === null || imageCount === 0) return current
-        return direction === 'next'
-          ? wrapIndex(current + 1, imageCount)
-          : wrapIndex(current - 1, imageCount)
-      })
-    },
-    [imageCount],
-  )
-
-  const handleNavPointerDown = useCallback(
-    (direction: 'prev' | 'next') => {
-      const current = activeIndexRef.current
-      if (current === null || imageCount === 0) return
-
-      const destination =
-        direction === 'next'
-          ? wrapIndex(current + 1, imageCount)
-          : wrapIndex(current - 1, imageCount)
-
-      const beyond =
-        direction === 'next'
-          ? wrapIndex(destination + 1, imageCount)
-          : wrapIndex(destination - 1, imageCount)
-
-      // Destination should already be preloaded; fetch one more in travel direction.
-      mountAndPreload([destination, beyond])
-    },
-    [imageCount, mountAndPreload],
-  )
-
-  const handleGridPreload = useCallback(
-    (index: number) => {
-      if (imageCount === 0) return
-      mountAndPreload([
-        index,
-        wrapIndex(index + 1, imageCount),
-        wrapIndex(index - 1, imageCount),
-      ])
-    },
-    [imageCount, mountAndPreload],
-  )
 
   useEffect(() => {
     if (activeIndex !== null) {
@@ -194,10 +270,6 @@ export default function IndexGallery({images}: IndexGalleryProps) {
     const markers = listRef.current?.querySelectorAll<HTMLElement>('[data-grid-marker]')
     if (!markers?.length) return
 
-    // Detection band is the top half of the viewport (top edge → vertical centre).
-    // The observer callback only reports markers whose intersection *changed*, so we
-    // track all currently-intersecting markers and pick the lowest one (closest to the
-    // centre line) using a fresh measurement. Never clear, so only one caption shows.
     const intersecting = new Set<HTMLElement>()
     const observer = new IntersectionObserver(
       (entries) => {
@@ -230,25 +302,8 @@ export default function IndexGallery({images}: IndexGalleryProps) {
     return () => observer.disconnect()
   }, [activeIndex, images.length])
 
-  useEffect(() => {
-    if (activeIndex === null) return
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') close()
-      if (event.key === 'ArrowRight') goTo('next')
-      if (event.key === 'ArrowLeft') goTo('prev')
-    }
-
-    window.addEventListener('keydown', onKeyDown)
-
-    return () => {
-      window.removeEventListener('keydown', onKeyDown)
-    }
-  }, [activeIndex, close, goTo])
-
   if (images.length === 0) return null
 
-  const activeImage = activeIndex !== null ? images[activeIndex] : null
   const firstDimensions = images.map(imageDimensions).find((dimensions) => dimensions !== null)
   const lastDimensions = [...images]
     .reverse()
@@ -271,69 +326,8 @@ export default function IndexGallery({images}: IndexGalleryProps) {
 
   return (
     <>
-      {activeImage?.asset?._id && activeIndex !== null ? (
-        <div className="fixed inset-0 z-50 flex h-svh flex-col items-center justify-center">
-          <button
-            type="button"
-            onClick={close}
-            className="absolute top-6 md:left-9 left-6 z-20 cursor-pointer"
-          >
-            Index
-          </button>
-
-          <button
-            type="button"
-            aria-label="Previous image"
-            onPointerDown={() => handleNavPointerDown('prev')}
-            onClick={() => goTo('prev')}
-            className="absolute inset-y-0 left-0 z-10 w-1/2 cursor-arrow-left"
-          />
-          <button
-            type="button"
-            aria-label="Next image"
-            onPointerDown={() => handleNavPointerDown('next')}
-            onClick={() => goTo('next')}
-            className="absolute inset-y-0 right-0 z-10 w-1/2 cursor-arrow-right"
-          />
-
-          <div className="relative m-auto md:h-[calc(100%-20rem)] h-[calc(100%-10rem)] md:w-[calc(100%-4.5rem)] w-[calc(100%-3rem)]">
-            {[...mountedIndices].map((index) => {
-              const image = images[index]
-              if (!image?.asset?._id) return null
-
-              const src = lightboxImageSrc(image)
-              const srcSet = lightboxImageSrcSet(image)
-              const isActive = index === activeIndex
-              const isLoaded = isSlideLoaded(index)
-
-              return (
-                <img
-                  key={image._key}
-                  src={src}
-                  srcSet={srcSet}
-                  sizes={LIGHTBOX_IMAGE_SIZES}
-                  alt={image.alt ?? ''}
-                  aria-hidden={!isActive}
-                  className={`absolute inset-0 h-full w-full object-contain pointer-events-none ${
-                    isActive && isLoaded ? 'opacity-100' : 'opacity-0'
-                  }`}
-                  onLoad={() => markSlideLoaded(index)}
-                />
-              )
-            })}
-          </div>
-
-          {(() => {
-            const lightboxCaption = activeImage.carouselCaption?.length
-              ? activeImage.carouselCaption
-              : activeImage.caption
-            return lightboxCaption?.length ? (
-              <div className="absolute md:bottom-0 bottom-6.5 left-0 md:flex md:h-40 w-full items-center justify-center text-center [&_a]:hover:opacity-30">
-                <CustomPortableText value={lightboxCaption as BlockContentTextOnly} />
-              </div>
-            ) : null
-          })()}
-        </div>
+      {activeIndex !== null ? (
+        <IndexLightbox images={images} startIndex={activeIndex} onClose={close} />
       ) : (
         <ul
           ref={listRef}
@@ -343,61 +337,15 @@ export default function IndexGallery({images}: IndexGalleryProps) {
           {images.map((image, index) => {
             if (!isRenderableGridImage(image)) return null
 
-            const dimensions = image.asset!.metadata!.dimensions!
-            const gridUrl = gridImageUrl(image)
-
             return (
-              <li
+              <GridThumbnail
                 key={image._key}
-                data-grid-index={index}
-                className={`w-auto px-4.5 md:mb-18 md:shrink-0 ${index !== lastRenderableIndex ? 'mb-25' : ''}`}
-              >
-                <button
-                  type="button"
-                  className="group relative m-auto block cursor-pointer opacity-0"
-                  onPointerDown={() => handleGridPreload(index)}
-                  onPointerEnter={() => handleGridPreload(index)}
-                  onClick={() => openImage(index)}
-                  aria-label={image.alt || `View image ${index + 1}`}
-                >
-                  <Image
-                    src={gridUrl}
-                    alt={image.alt ?? ''}
-                    width={dimensions.width}
-                    height={dimensions.height}
-                    unoptimized
-                    //sizes="(max-width: 768px) 100vw, 12.5rem"
-                    sizes="(max-width: 768px) 60vw, 12.5rem"
-                    onLoad={(e) => {
-                      e.currentTarget.closest('.opacity-0')?.classList.remove('opacity-0')
-                    }}
-                    loading="eager"
-                    // className={
-                    //   dimensions.height <= dimensions.width
-                    //     ? 'block h-auto md:w-50 w-[calc(100vw-10rem)]'
-                    //     : 'block md:h-50 h-[calc(100vw-10rem)] w-auto'
-                    // }
-                    className={
-                      dimensions.height <= dimensions.width
-                        ? 'block h-auto w-[200px]'
-                        : 'block w-auto h-[200px]'
-                    }
-                  />
-                  <span
-                    data-grid-marker={index}
-                    className="pointer-events-none absolute top-1/2 left-1/2 h-px w-px -translate-1/2 opacity-0 md:hidden"
-                    aria-hidden
-                  />
-                  {image.caption?.length ? (
-                    <div
-                      data-active={focusedIndex === index ? 'true' : undefined}
-                      className="grid-caption [&_a]:hover:opacity-30"
-                    >
-                      <CustomPortableText value={image.caption as BlockContentTextOnly} />
-                    </div>
-                  ) : null}
-                </button>
-              </li>
+                image={image}
+                index={index}
+                isLast={index === lastRenderableIndex}
+                focusedIndex={focusedIndex}
+                onOpen={openImage}
+              />
             )
           })}
           {Array.from({length: 8}, (_, index) => (

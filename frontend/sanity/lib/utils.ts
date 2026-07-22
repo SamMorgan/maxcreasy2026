@@ -22,7 +22,7 @@ export function gridImageUrl(source: SanityImageSource) {
 /** Lightbox srcset widths — browser picks based on sizes + device pixel ratio. */
 export const LIGHTBOX_IMAGE_WIDTHS = [1200, 1800, 2400, 2800] as const
 
-/** Must match the lightbox container width in IndexGallery. */
+/** Must match horizontal padding inside each lightbox slide (px-6 / md:px-9). */
 export const LIGHTBOX_IMAGE_SIZES = '(min-width: 48rem) calc(100vw - 4.5rem), calc(100vw - 3rem)'
 
 function lightboxImageAtWidth(source: SanityImageSource, width: number) {
