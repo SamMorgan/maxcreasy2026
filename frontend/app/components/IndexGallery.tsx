@@ -116,6 +116,18 @@ function lightboxCaption(image: IndexImage) {
   return image.carouselCaption?.length ? image.carouselCaption : image.caption
 }
 
+function wrapIndex(index: number, count: number) {
+  return ((index % count) + count) % count
+}
+
+function isLightboxPreloadIndex(index: number, selectedIndex: number, count: number, radius = 2) {
+  for (let offset = 1; offset <= radius; offset++) {
+    if (index === wrapIndex(selectedIndex + offset, count)) return true
+    if (index === wrapIndex(selectedIndex - offset, count)) return true
+  }
+  return false
+}
+
 function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
   const [selectedIndex, setSelectedIndex] = useState(startIndex)
   const pointerStartRef = useRef<{x: number; y: number} | null>(null)
@@ -243,11 +255,7 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
             if (!image.asset?._id) return null
 
             const isSelected = index === selectedIndex
-            const isNeighbor =
-              index === selectedIndex - 1 ||
-              index === selectedIndex + 1 ||
-              (selectedIndex === 0 && index === images.length - 1) ||
-              (selectedIndex === images.length - 1 && index === 0)
+            const isNeighbor = isLightboxPreloadIndex(index, selectedIndex, images.length)
             const caption = lightboxCaption(image)
 
             return (
