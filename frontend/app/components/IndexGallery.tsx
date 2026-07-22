@@ -257,8 +257,8 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
                 aria-hidden={!isSelected}
               >
                 <div className="relative flex h-full flex-col px-6 md:px-9">
-                  <div className="mt-auto flex h-[calc(100svh-9.25rem)] items-center justify-center md:h-[calc(100svh-20rem)]">
-                    <img
+                  <div className="mt-auto flex h-[calc(100svh-9.25rem)] items-center justify-center md:h-[calc(100svh-20rem)] relative">
+                    {/* <img
                       src={lightboxImageSrc(image)}
                       srcSet={lightboxImageSrcSet(image)}
                       sizes={LIGHTBOX_IMAGE_SIZES}
@@ -266,7 +266,19 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
                       draggable={false}
                       loading={isSelected || isNeighbor ? 'eager' : 'lazy'}
                       className="max-h-full max-w-full object-contain pointer-events-none"
+                    /> */}
+                    {image.asset?.url && (
+                    <Image
+                      src={image.asset?.url ?? ''}
+                      //srcSet={lightboxImageSrcSet(image)}
+                      sizes='100vw'
+                      fill
+                      alt={image.alt ?? ''}
+                      draggable={false}
+                      loading={isSelected || isNeighbor ? 'eager' : 'lazy'}
+                      className="max-h-full max-w-full object-contain pointer-events-none"
                     />
+                    )}
                   </div>
 
                   {caption?.length ? (
