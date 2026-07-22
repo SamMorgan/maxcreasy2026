@@ -1,7 +1,7 @@
 'use client'
 
 import useEmblaCarousel from 'embla-carousel-react'
-import {useCallback, useEffect, useRef, useState, type CSSProperties, type MouseEvent} from 'react'
+import {useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent} from 'react'
 
 import Image from 'next/image'
 import CustomPortableText from '@/app/components/PortableText'
@@ -118,12 +118,13 @@ function lightboxCaption(image: IndexImage) {
 
 function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
   const [selectedIndex, setSelectedIndex] = useState(startIndex)
-  const dragStartedRef = useRef(false)
+  const pointerStartRef = useRef<{x: number; y: number} | null>(null)
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     duration: 0,
     startIndex,
     align: 'start',
+    watchDrag: false,
   })
 
   useEffect(() => {
@@ -136,22 +137,11 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
     if (!emblaApi) return
 
     const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap())
-    const onPointerDown = () => {
-      dragStartedRef.current = false
-    }
-    const onScroll = () => {
-      dragStartedRef.current = true
-    }
-
     emblaApi.on('select', onSelect)
-    emblaApi.on('pointerDown', onPointerDown)
-    emblaApi.on('scroll', onScroll)
     onSelect()
 
     return () => {
       emblaApi.off('select', onSelect)
-      emblaApi.off('pointerDown', onPointerDown)
-      emblaApi.off('scroll', onScroll)
     }
   }, [emblaApi])
 
@@ -171,9 +161,43 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
     }
   }, [emblaApi, onClose])
 
-  const handleViewportClick = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
-      if (!emblaApi || dragStartedRef.current) return
+  const goPrev = useCallback(() => {
+    emblaApi?.scrollPrev()
+  }, [emblaApi])
+
+  const goNext = useCallback(() => {
+    emblaApi?.scrollNext()
+  }, [emblaApi])
+
+  const resetPointer = useCallback(() => {
+    pointerStartRef.current = null
+  }, [])
+
+  const handlePointerDown = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    pointerStartRef.current = {x: event.clientX, y: event.clientY}
+  }, [])
+
+  const handlePointerUp = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      if (!emblaApi || !pointerStartRef.current) return
+      if ((event.target as HTMLElement).closest('a')) {
+        pointerStartRef.current = null
+        return
+      }
+
+      const dx = event.clientX - pointerStartRef.current.x
+      const dy = event.clientY - pointerStartRef.current.y
+      pointerStartRef.current = null
+
+      const swipeThreshold = 40
+
+      if (Math.abs(dx) >= swipeThreshold && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) emblaApi.scrollNext()
+        else emblaApi.scrollPrev()
+        return
+      }
+
+      if (Math.abs(dx) > 10 || Math.abs(dy) > 10) return
 
       const bounds = event.currentTarget.getBoundingClientRect()
       const clickX = event.clientX - bounds.left
@@ -194,10 +218,25 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
         Index
       </button>
 
+      <button
+        type="button"
+        aria-label="Previous image"
+        onClick={goPrev}
+        className="absolute inset-y-0 left-0 z-10 hidden w-1/2 cursor-arrow-left can-hover:block"
+      />
+      <button
+        type="button"
+        aria-label="Next image"
+        onClick={goNext}
+        className="absolute inset-y-0 right-0 z-10 hidden w-1/2 cursor-arrow-right can-hover:block"
+      />
+
       <div
-        className="h-full w-full overflow-hidden cursor-grab touch-pan-x active:cursor-grabbing"
+        className="h-full w-full overflow-hidden touch-none"
         ref={emblaRef}
-        onClick={handleViewportClick}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={resetPointer}
       >
         <div className="flex h-full">
           {images.map((image, index) => {
@@ -217,8 +256,8 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
                 className="h-full min-w-0 flex-[0_0_100%] select-none"
                 aria-hidden={!isSelected}
               >
-                <div className="flex h-full flex-col px-6 md:gap-0 md:px-9 relative">
-                  <div className="flex min-h-0 items-center justify-center md:items-center md:h-[calc(100%-20rem)] h-[calc(100%-9.25rem)] mt-auto">
+                <div className="relative flex h-full flex-col px-6 md:px-9">
+                  <div className="mt-auto flex h-[calc(100svh-9.25rem)] items-center justify-center md:h-[calc(100svh-20rem)]">
                     <img
                       src={lightboxImageSrc(image)}
                       srcSet={lightboxImageSrcSet(image)}
@@ -231,7 +270,7 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
                   </div>
 
                   {caption?.length ? (
-                    <div className="shrink-0 h-18.5 text-center flex md:h-40 items-center justify-center [&_a]:hover:opacity-30">
+                    <div className="flex h-18.5 shrink-0 items-center justify-center text-center md:h-40 [&_a]:hover:opacity-30">
                       <CustomPortableText value={caption as BlockContentTextOnly} />
                     </div>
                   ) : null}
