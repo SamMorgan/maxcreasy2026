@@ -202,6 +202,7 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
   const imgRefs = useRef(new Map<number, HTMLImageElement>())
   const navTimestampsRef = useRef<number[]>([])
   const lastNavDirectionRef = useRef<'prev' | 'next'>('next')
+  const [loadedSlideIndices, setLoadedSlideIndices] = useState<Set<number>>(() => new Set())
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     duration: 0,
@@ -227,6 +228,15 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
       emblaApi.off('select', onSelect)
     }
   }, [emblaApi])
+
+  const markSlideLoaded = useCallback((index: number) => {
+    setLoadedSlideIndices((prev) => {
+      if (prev.has(index)) return prev
+      const next = new Set(prev)
+      next.add(index)
+      return next
+    })
+  }, [])
 
   const isBurstNavigating = useCallback(() => {
     const now = Date.now()
@@ -438,6 +448,7 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
           {lightboxImages.map((image, index) => {
             const isSelected = index === selectedIndex
             const isNeighbor = isLightboxPreloadIndex(index, selectedIndex, lightboxImages.length)
+            const isLoaded = loadedSlideIndices.has(index)
             const caption = lightboxCaption(image)
 
             return (
@@ -450,8 +461,12 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
                   <div className="mt-auto flex h-[calc(100svh-9.25rem)] items-center justify-center md:h-[calc(100svh-20rem)] relative">
                     <img
                       ref={(node) => {
-                        if (node) imgRefs.current.set(index, node)
-                        else imgRefs.current.delete(index)
+                        if (node) {
+                          imgRefs.current.set(index, node)
+                          if (node.complete && node.naturalWidth > 0) markSlideLoaded(index)
+                        } else {
+                          imgRefs.current.delete(index)
+                        }
                       }}
                       src={lightboxImageSrc(image)}
                       srcSet={lightboxImageSrcSet(image)}
@@ -460,19 +475,11 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
                       draggable={false}
                       loading={isSelected || isNeighbor ? 'eager' : 'lazy'}
                       fetchPriority={isSelected ? 'high' : isNeighbor ? 'low' : 'auto'}
-                      className="max-h-full max-w-full object-contain pointer-events-none"
+                      onLoad={() => markSlideLoaded(index)}
+                      className={`max-h-full max-w-full object-contain pointer-events-none ${
+                        isLoaded ? 'opacity-100' : 'opacity-0'
+                      }`}
                     />
-                    {/* {image.asset?.url && (
-                    <Image
-                      src={image.asset?.url}
-                      alt={image.alt ?? ''}
-                        fill={true} 
-                        sizes="100vw"
-                        //unoptimized
-                        //sizes={LIGHTBOX_IMAGE_SIZES}
-                        loading={isSelected || isNeighbor ? 'eager' : 'lazy'}
-                      />
-                    )} */}
                   </div>
 
                   {caption?.length ? (
