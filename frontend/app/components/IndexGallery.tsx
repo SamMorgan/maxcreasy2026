@@ -129,12 +129,29 @@ function isLightboxPreloadIndex(index: number, selectedIndex: number, count: num
 }
 
 const LIGHTBOX_PRELOAD_RADIUS = 2
+const LIGHTBOX_BURST_WINDOW_MS = 1500
+const LIGHTBOX_BURST_MIN_NAVS = 2
+const LIGHTBOX_BURST_DIRECTIONAL_RADIUS = 5
 
 function lightboxIndicesToPreload(center: number, count: number, radius = LIGHTBOX_PRELOAD_RADIUS) {
   const indices = [center]
   for (let offset = 1; offset <= radius; offset++) {
     indices.push(wrapIndex(center + offset, count))
     indices.push(wrapIndex(center - offset, count))
+  }
+  return indices
+}
+
+function lightboxIndicesToPreloadDirectionally(
+  center: number,
+  count: number,
+  direction: 'prev' | 'next',
+  radius: number,
+) {
+  const step = direction === 'next' ? 1 : -1
+  const indices = [center]
+  for (let offset = 1; offset <= radius; offset++) {
+    indices.push(wrapIndex(center + step * offset, count))
   }
   return indices
 }
@@ -183,6 +200,8 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
   const [selectedIndex, setSelectedIndex] = useState(startSlideIndex)
   const pointerStartRef = useRef<{x: number; y: number} | null>(null)
   const imgRefs = useRef(new Map<number, HTMLImageElement>())
+  const navTimestampsRef = useRef<number[]>([])
+  const lastNavDirectionRef = useRef<'prev' | 'next'>('next')
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: true,
     duration: 0,
@@ -209,56 +228,111 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
     }
   }, [emblaApi])
 
+  const isBurstNavigating = useCallback(() => {
+    const now = Date.now()
+    navTimestampsRef.current = navTimestampsRef.current.filter(
+      (timestamp) => now - timestamp < LIGHTBOX_BURST_WINDOW_MS,
+    )
+    return navTimestampsRef.current.length >= LIGHTBOX_BURST_MIN_NAVS
+  }, [])
+
+  const recordNavigation = useCallback((direction: 'prev' | 'next') => {
+    lastNavDirectionRef.current = direction
+    navTimestampsRef.current.push(Date.now())
+  }, [])
+
+  const preloadSlideIndex = useCallback(
+    (index: number) => {
+      const image = lightboxImages[index]
+      if (!image) return
+
+      preloadLightboxImage(image)
+
+      const img = imgRefs.current.get(index)
+      if (img && !img.complete) forceImageLoad(img)
+    },
+    [lightboxImages],
+  )
+
   const preloadAroundIndex = useCallback(
     (center: number, radius = LIGHTBOX_PRELOAD_RADIUS) => {
       if (lightboxImages.length === 0) return
 
       for (const index of lightboxIndicesToPreload(center, lightboxImages.length, radius)) {
-        const image = lightboxImages[index]
-        if (!image) continue
-
-        preloadLightboxImage(image)
-
-        const img = imgRefs.current.get(index)
-        if (img && !img.complete) forceImageLoad(img)
+        preloadSlideIndex(index)
       }
     },
-    [lightboxImages],
+    [lightboxImages.length, preloadSlideIndex],
+  )
+
+  const preloadDirectionally = useCallback(
+    (center: number, direction: 'prev' | 'next', radius: number) => {
+      if (lightboxImages.length === 0) return
+
+      for (const index of lightboxIndicesToPreloadDirectionally(
+        center,
+        lightboxImages.length,
+        direction,
+        radius,
+      )) {
+        preloadSlideIndex(index)
+      }
+    },
+    [lightboxImages.length, preloadSlideIndex],
+  )
+
+  const preloadForNavigation = useCallback(
+    (center: number, direction: 'prev' | 'next') => {
+      if (isBurstNavigating()) {
+        preloadDirectionally(center, direction, LIGHTBOX_BURST_DIRECTIONAL_RADIUS)
+        return
+      }
+
+      preloadAroundIndex(center, LIGHTBOX_PRELOAD_RADIUS + 1)
+      preloadDirectionally(center, direction, LIGHTBOX_PRELOAD_RADIUS + 1)
+    },
+    [isBurstNavigating, preloadAroundIndex, preloadDirectionally],
   )
 
   useEffect(() => {
+    if (isBurstNavigating()) {
+      preloadDirectionally(
+        selectedIndex,
+        lastNavDirectionRef.current,
+        LIGHTBOX_BURST_DIRECTIONAL_RADIUS,
+      )
+      return
+    }
+
     preloadAroundIndex(selectedIndex)
-  }, [selectedIndex, preloadAroundIndex])
+  }, [selectedIndex, isBurstNavigating, preloadAroundIndex, preloadDirectionally])
 
   const goPrev = useCallback(() => {
-    preloadAroundIndex(emblaApi?.selectedScrollSnap() ?? selectedIndex, LIGHTBOX_PRELOAD_RADIUS + 1)
+    const current = emblaApi?.selectedScrollSnap() ?? selectedIndex
+    recordNavigation('prev')
+    preloadForNavigation(current, 'prev')
     emblaApi?.scrollPrev()
-  }, [emblaApi, preloadAroundIndex, selectedIndex])
+  }, [emblaApi, preloadForNavigation, recordNavigation, selectedIndex])
 
   const goNext = useCallback(() => {
-    preloadAroundIndex(emblaApi?.selectedScrollSnap() ?? selectedIndex, LIGHTBOX_PRELOAD_RADIUS + 1)
+    const current = emblaApi?.selectedScrollSnap() ?? selectedIndex
+    recordNavigation('next')
+    preloadForNavigation(current, 'next')
     emblaApi?.scrollNext()
-  }, [emblaApi, preloadAroundIndex, selectedIndex])
+  }, [emblaApi, preloadForNavigation, recordNavigation, selectedIndex])
 
   const preloadOnNavPointerDown = useCallback(
     (direction: 'prev' | 'next') => {
       if (!emblaApi || lightboxImages.length === 0) return
 
-      const step = direction === 'next' ? 1 : -1
       const current = emblaApi.selectedScrollSnap()
+      const radius = isBurstNavigating()
+        ? LIGHTBOX_BURST_DIRECTIONAL_RADIUS
+        : LIGHTBOX_PRELOAD_RADIUS + 1
 
-      for (let offset = 1; offset <= LIGHTBOX_PRELOAD_RADIUS + 1; offset++) {
-        const index = wrapIndex(current + step * offset, lightboxImages.length)
-        const image = lightboxImages[index]
-        if (!image) continue
-
-        preloadLightboxImage(image)
-
-        const img = imgRefs.current.get(index)
-        if (img && !img.complete) forceImageLoad(img)
-      }
+      preloadDirectionally(current, direction, radius)
     },
-    [emblaApi, lightboxImages],
+    [emblaApi, isBurstNavigating, lightboxImages.length, preloadDirectionally],
   )
 
   useEffect(() => {
@@ -284,9 +358,17 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       pointerStartRef.current = {x: event.clientX, y: event.clientY}
-      preloadAroundIndex(selectedIndex, LIGHTBOX_PRELOAD_RADIUS + 1)
+
+      const bounds = event.currentTarget.getBoundingClientRect()
+      const clickX = event.clientX - bounds.left
+      const direction = clickX < bounds.width / 2 ? 'prev' : 'next'
+      const radius = isBurstNavigating()
+        ? LIGHTBOX_BURST_DIRECTIONAL_RADIUS
+        : LIGHTBOX_PRELOAD_RADIUS + 1
+
+      preloadDirectionally(selectedIndex, direction, radius)
     },
-    [preloadAroundIndex, selectedIndex],
+    [isBurstNavigating, preloadDirectionally, selectedIndex],
   )
 
   const handlePointerUp = useCallback(
@@ -380,6 +462,17 @@ function IndexLightbox({images, startIndex, onClose}: IndexLightboxProps) {
                       fetchPriority={isSelected ? 'high' : isNeighbor ? 'low' : 'auto'}
                       className="max-h-full max-w-full object-contain pointer-events-none"
                     />
+                    {/* {image.asset?.url && (
+                    <Image
+                      src={image.asset?.url}
+                      alt={image.alt ?? ''}
+                        fill={true} 
+                        sizes="100vw"
+                        //unoptimized
+                        //sizes={LIGHTBOX_IMAGE_SIZES}
+                        loading={isSelected || isNeighbor ? 'eager' : 'lazy'}
+                      />
+                    )} */}
                   </div>
 
                   {caption?.length ? (

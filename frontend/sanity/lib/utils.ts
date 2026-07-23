@@ -23,7 +23,8 @@ export function gridImageUrl(source: SanityImageSource) {
 export const LIGHTBOX_IMAGE_WIDTHS = [1200, 1800, 2400, 2800] as const
 
 /** Must match horizontal padding inside each lightbox slide (px-6 / md:px-9). */
-export const LIGHTBOX_IMAGE_SIZES = '(min-width: 48rem) calc(100vw - 4.5rem), calc(100vw - 3rem)'
+//export const LIGHTBOX_IMAGE_SIZES = '(min-width: 48rem) calc(100vw - 4.5rem), calc(100vw - 3rem)'
+export const LIGHTBOX_IMAGE_SIZES = '(min-width: 768px) calc(100vw - 4.5rem), calc(100vw - 3rem)'
 
 function lightboxImageAtWidth(source: SanityImageSource, width: number) {
   return urlFor(source).width(width).quality(95).format('jpg').fit('max').url()
